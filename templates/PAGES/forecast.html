@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CraveCast - Demand Forecast{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --brand-black: #000;
+        --brand-blue: #2B4560;
+    }
+
+    .forecast-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 20px;
+        margin-top: 24px;
+    }
+
+    .panel {
+        background: #fff;
+        border: 1px solid #eee;
+        border-top: 3px solid #000;
+        padding: 24px;
+    }
+
+    .panel-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #aaa;
+        margin-bottom: 16px;
+    }
+
+    /* Weather signal row */
+    .signal-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .signal-card {
+        background: #f5f5f5;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .signal-card .signal-icon {
+        font-size: 1.4rem;
+        margin-bottom: 6px;
+    }
+
+    .signal-card .signal-value {
+        font-size: 1.4rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+        color: #000;
+    }
+
+    .signal-card .signal-label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #aaa;
+        margin-top: 4px;
+    }
+
+    .signal-card.active-signal {
+        background: #000;
+    }
+    .signal-card.active-signal .signal-value,
+    .signal-card.active-signal .signal-label {
+        color: #fff;
+    }
+
+    /* Condition badge */
+    .condition-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 5px 12px;
+        background: #f0f0f0;
+        margin-bottom: 20px;
+    }
+
+    /* Prediction section */
+    .prediction-number {
+        font-size: 5rem;
+        font-weight: 900;
+        letter-spacing: -4px;
+        line-height: 1;
+        color: #000;
+        margin: 8px 0;
+    }
+
+    .prediction-unit {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #aaa;
+    }
+
+    .prediction-reason {
+        font-size: 0.82rem;
+        color: #666;
+        line-height: 1.7;
+        font-style: italic;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    /* Per-product breakdown */
+    .product-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .product-row:last-child { border-bottom: none; }
+
+    .product-name {
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .product-bar-wrap {
+        flex: 1;
+        margin: 0 16px;
+        height: 6px;
+        background: #f0f0f0;
+    }
+
+    .product-bar {
+        height: 100%;
+        background: #000;
+        transition: width 0.6s ease;
+    }
+
+    .product-qty {
+        font-size: 1rem;
+        font-weight: 900;
+        min-width: 40px;
+        text-align: right;
+    }
+
+    .product-trend {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 3px 8px;
+        margin-left: 10px;
+        text-transform: uppercase;
+    }
+
+    .trend-up { background: #000; color: #fff; }
+    .trend-down { background: #f0f0f0; color: #999; }
+
+    /* Accuracy badge */
+    .accuracy-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+        padding: 14px;
+        background: #f9f9f9;
+        border-left: 3px solid #000;
+    }
+
+    .accuracy-score {
+        font-size: 1.6rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
+
+    .accuracy-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #888;
+    }
+
+    /* Search */
+    .search-row {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0 0;
+    }
+
+    input#city_input {
+        flex: 1;
+        padding: 13px 16px;
+        border: 1px solid #ddd;
+        font-size: 0.9rem;
+        font-family: inherit;
+        border-radius: 0;
+    }
+
+    input#city_input:focus { outline: none; border-color: #000; }
+
+    .btn-black {
+        background: #000;
+        color: #fff;
+        border: 1px solid #000;
+        padding: 13px 20px;
+        cursor: pointer;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: 0.15s;
+    }
+
+    .btn-black:hover { background: #fff; color: #000; }
+    .btn-gps { background: #555; border-color: #555; }
+    .btn-gps:hover { background: #fff; color: #555; }
+
+    /* Location pill */
+    .location-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #888;
+        margin-top: 8px;
+    }
+
+    .location-dot {
+        width: 6px;
+        height: 6px;
+        background: #000;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    /* No data state */
+    .no-data-state {
+        text-align: center;
+        padding: 30px 20px;
+        color: #bbb;
+    }
+
+    .no-data-state p {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .forecast-grid { grid-template-columns: 1fr; }
+        .signal-row { grid-template-columns: repeat(3, 1fr); }
+        .prediction-number { font-size: 3.5rem; }
+    }
+</style>
+
+<!-- PAGE HEADER -->
+<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+    <div>
+        <h1 style="font-weight:900; font-size:2rem; margin:0; letter-spacing:-1px;">Demand Forecast</h1>
+        <div class="location-pill">
+            <div class="location-dot"></div>
+            <span>Tracking: <strong id="locationLabel" style="color:#000;">Binangonan, PH</strong></span>
+        </div>
+    </div>
+    <div class="search-row" style="margin:0;">
+        <input type="text" id="city_input" placeholder="Enter city name...">
+        <button class="btn-black" id="searchBtn">Search</button>
+        <button class="btn-black btn-gps" id="locationBtn">
+            <i class='bx bx-target-lock'></i> GPS
+        </button>
+    </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="forecast-grid">
+
+    <!-- LEFT: WEATHER SIGNALS + PREDICTION -->
+    <div>
+        <!-- 3 SIGNAL CARDS: Only what matters -->
+        <div class="panel" style="border-top-color:#000;">
+            <p class="panel-label">Live Weather Signals</p>
+
+            <div class="signal-row">
+                <div class="signal-card" id="tempCard">
+                    <div class="signal-icon">🌡</div>
+                    <div class="signal-value" id="currentTemp">--</div>
+                    <div class="signal-label">Temperature</div>
+                </div>
+                <div class="signal-card" id="humidCard">
+                    <div class="signal-icon">💧</div>
+                    <div class="signal-value" id="humidityVal">--%</div>
+                    <div class="signal-label">Humidity</div>
+                </div>
+                <div class="signal-card" id="condCard">
+                    <div class="signal-icon" id="condIcon">☁</div>
+                    <div class="signal-value" id="condVal" style="font-size:0.75rem; letter-spacing:0;">--</div>
+                    <div class="signal-label">Condition</div>
+                </div>
+            </div>
+
+            <p style="font-size:0.7rem; color:#aaa; text-align:center;">
+                These 3 signals feed directly into the prediction model
+            </p>
+        </div>
+
+        <!-- PREDICTION OUTPUT -->
+        <div class="panel" style="margin-top:16px;">
+            <p class="panel-label">Linear Regression Output</p>
+
+            <div id="predictionVal" class="prediction-number">--</div>
+            <div class="prediction-unit">Total units predicted today</div>
+
+            <p id="predictionReason" class="prediction-reason">
+                Waiting for weather data to run prediction...
+            </p>
+
+            <!-- Model accuracy -->
+            <div class="accuracy-row" id="accuracyRow" style="display:none;">
+                <div>
+                    <div class="accuracy-score" id="accuracyScore">--%</div>
+                    <div class="accuracy-label">Model Accuracy (R²)</div>
+                </div>
+                <div style="font-size:0.7rem; color:#888; line-height:1.6;">
+                    Based on <strong id="rowCount">--</strong> historical records.
+                    Higher R² = more reliable prediction.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: PER-PRODUCT BREAKDOWN -->
+    <div>
+        <div class="panel" style="height:fit-content;">
+            <p class="panel-label">Per-Product Forecast</p>
+
+            <div id="productBreakdown">
+                <div class="no-data-state">
+                    <div style="font-size:2rem;">📊</div>
+                    <p>Upload sales data to see<br>per-product breakdown</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- What the model considers -->
+        <div class="panel" style="margin-top:16px; border-top-color:#555;">
+            <p class="panel-label">Model Inputs</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                    <span style="color:#555;">Temperature (°C)</span>
+                    <strong id="inputTemp">--</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                    <span style="color:#555;">Humidity (%)</span>
+                    <strong id="inputHumid">--</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                    <span style="color:#555;">Day of Week</span>
+                    <strong id="inputDay">--</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const API_KEY = "317203ed9c8ce2df206a3b5451c60bce";
+
+    const cityInput     = document.querySelector("#city_input");
+    const searchBtn     = document.querySelector("#searchBtn");
+    const locationBtn   = document.querySelector("#locationBtn");
+    const locationLabel = document.querySelector("#locationLabel");
+    const currentTemp   = document.querySelector("#currentTemp");
+    const humidityVal   = document.querySelector("#humidityVal");
+    const condVal       = document.querySelector("#condVal");
+    const condIcon      = document.querySelector("#condIcon");
+    const predictionVal = document.querySelector("#predictionVal");
+    const predictionReason = document.querySelector("#predictionReason");
+    const productBreakdown = document.querySelector("#productBreakdown");
+    const accuracyRow   = document.querySelector("#accuracyRow");
+    const accuracyScore = document.querySelector("#accuracyScore");
+    const rowCount      = document.querySelector("#rowCount");
+    const inputTemp     = document.querySelector("#inputTemp");
+    const inputHumid    = document.querySelector("#inputHumid");
+    const inputDay      = document.querySelector("#inputDay");
+
+    const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+    const CONDITION_ICONS = {
+        "clear": "☀",
+        "cloud": "☁",
+        "rain": "🌧",
+        "drizzle": "🌦",
+        "thunder": "⛈",
+        "snow": "❄",
+        "mist": "🌫",
+        "fog": "🌫",
+    };
+
+    function getConditionIcon(description) {
+        const d = description.toLowerCase();
+        for (const [key, icon] of Object.entries(CONDITION_ICONS)) {
+            if (d.includes(key)) return icon;
+        }
+        return "🌤";
+    }
+
+    async function getWeatherAndForecast(cityName) {
+        if (!API_KEY) return;
+        const URL = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=metric&appid=${API_KEY}`;
+        try {
+            const response = await fetch(URL);
+            const data = await response.json();
+            if (data.cod !== "200") {
+                predictionReason.textContent = "Location not found. Try another city.";
+                return;
+            }
+            updateWeatherSignals(data);
+            const temp     = Math.round(data.list[0].main.temp);
+            const humidity = data.list[0].main.humidity;
+            fetchMLPrediction(temp, humidity);
+        } catch (error) {
+            predictionReason.textContent = "Connection error. Check your network.";
+        }
+    }
+
+    function updateWeatherSignals(data) {
+        const current = data.list[0];
+        const city    = data.city;
+        const temp    = Math.round(current.main.temp);
+        const humid   = current.main.humidity;
+        const desc    = current.weather[0].description;
+
+        locationLabel.textContent = `${city.name}, ${city.country}`;
+        currentTemp.textContent   = `${temp}°C`;
+        humidityVal.textContent   = `${humid}%`;
+        condVal.textContent       = desc;
+        condIcon.textContent      = getConditionIcon(desc);
+
+        // Highlight the dominant signal
+        document.getElementById("tempCard").classList.remove("active-signal");
+        document.getElementById("humidCard").classList.remove("active-signal");
+        document.getElementById("condCard").classList.remove("active-signal");
+
+        if (temp > 32) document.getElementById("tempCard").classList.add("active-signal");
+        else if (humid > 75) document.getElementById("humidCard").classList.add("active-signal");
+
+        // Update model inputs panel
+        inputTemp.textContent  = `${temp}°C`;
+        inputHumid.textContent = `${humid}%`;
+        inputDay.textContent   = DAYS[new Date().getDay()];
+    }
+
+    async function fetchMLPrediction(temperature, humidity) {
+        predictionVal.textContent = "...";
+        try {
+            const response = await fetch(`/forecast/predict-api/?temp=${temperature}&humidity=${humidity}`);
+            const result   = await response.json();
+
+            predictionVal.textContent   = result.prediction !== "Need Data" ? result.prediction : "--";
+            predictionReason.textContent = result.reason;
+
+            // Show accuracy if available
+            if (result.accuracy !== undefined) {
+                accuracyScore.textContent = `${Math.round(result.accuracy * 100)}%`;
+                rowCount.textContent      = result.row_count || "--";
+                accuracyRow.style.display = "flex";
+            }
+
+            // Per-product breakdown
+            if (result.products && result.products.length > 0) {
+                renderProductBreakdown(result.products);
+            }
+
+        } catch (err) {
+            predictionVal.textContent    = "--";
+            predictionReason.textContent = "Upload historical sales data to enable the ML Engine.";
+        }
+    }
+
+    function renderProductBreakdown(products) {
+        const maxQty = Math.max(...products.map(p => p.qty));
+        productBreakdown.innerHTML = products.map(p => {
+            const barWidth = Math.round((p.qty / maxQty) * 100);
+            const trendClass = p.trend === "up" ? "trend-up" : "trend-down";
+            const trendLabel = p.trend === "up" ? "↑ High" : "↓ Low";
+            return `
+                <div class="product-row">
+                    <span class="product-name" style="min-width:90px;">${p.name}</span>
+                    <div class="product-bar-wrap">
+                        <div class="product-bar" style="width:${barWidth}%"></div>
+                    </div>
+                    <span class="product-qty">${p.qty}</span>
+                    <span class="product-trend ${trendClass}">${trendLabel}</span>
+                </div>`;
+        }).join("");
+    }
+
+    // Events
+    searchBtn.addEventListener("click", () => {
+        const city = cityInput.value.trim();
+        if (city) getWeatherAndForecast(city);
+    });
+
+    cityInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            const city = cityInput.value.trim();
+            if (city) getWeatherAndForecast(city);
+        }
+    });
+
+    locationBtn.addEventListener("click", () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const GEO_URL = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${API_KEY}`;
+                const res = await fetch(GEO_URL);
+                const geo = await res.json();
+                if (geo.length > 0) getWeatherAndForecast(geo[0].name);
+            });
+        }
+    });
+
+    window.addEventListener("load", () => getWeatherAndForecast("Binangonan"));
+</script>
+{% endblock %}

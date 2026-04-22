@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CraveCast - Admin Management{% endblock %}
+
+{% block content %}
+<style>
+    :root { --brand-black: #000000; --white-bg: #ffffff; }
+
+    .bottom-data > div { border: 1px solid #eee !important; background: #fff !important; padding: 20px !important; margin-bottom: 20px; border-top: 4px solid #000 !important; }
+    
+    .status { padding: 4px 10px; font-weight: 800; text-transform: uppercase; font-size: 0.6rem; letter-spacing: 1px; }
+    .status.process { background: var(--brand-black); color: #fff; }
+    .status.completed { background: #eee; color: #333; }
+
+    .btn-black-rect {
+        background: var(--brand-black); color: #fff; border: 2px solid var(--brand-black);
+        padding: 10px 20px; cursor: pointer; font-weight: 800;
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
+    }
+    .btn-black-rect:hover { background: #fff; color: var(--brand-black); }
+
+    /* Modal */
+    .modal { display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); }
+    .modal-content { background:#fff; margin:5% auto; padding:35px; width:380px; border: 1px solid #eee; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+    .modal-content label { font-size: 0.65rem; font-weight: 800; color: #888; display: block; margin-bottom: 5px; }
+    .modal-content input, .modal-content select { border: 1px solid #ddd; width: 100%; padding: 12px; margin-bottom: 15px; font-size: 0.85rem; font-family: inherit; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    table thead th { font-size: 0.7rem; padding: 12px; background: #fcfcfc; text-align: left; text-transform: uppercase; color: #888; border-bottom: 1px solid #eee; }
+    table tbody td { padding: 12px; font-size: 0.85rem; border-bottom: 1px solid #f9f9f9; }
+</style>
+
+<div class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
+    <div class="left">
+        <h1 style="font-weight: 900; font-size: 2.2rem;">Accounts Management</h1>
+        <p style="color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Admin Control & System Security</p>
+    </div>
+    <button class="btn-black-rect" onclick="document.getElementById('userModal').style.display='block'">
+        <i class='bx bx-user-plus'></i> Add New Account
+    </button>
+</div>
+
+<!-- DJANGO MESSAGES -->
+
+
+<div class="bottom-data">
+    <!-- USER LIST -->
+    <div class="orders">
+        <div class="header" style="margin-bottom:20px;">
+            <h3 style="font-weight: 900; text-transform: uppercase; font-size: 0.9rem;">Authorized Users</h3>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email Address</th>
+                    <th style="text-align: center;">Permission Role</th>
+                    <th style="text-align: center;">Management</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>{{ u.username }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td style="text-align: center;">
+                        <span class="status {% if u.role == 'Owner' %}process{% else %}completed{% endif %}">
+                            {{ u.role|default:"Staff" }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if u.id != request.user.id %}
+                        <a href="?delete_user={{ u.id }}" onclick="return confirm('Are you sure?')" style="color: #D32F2F; font-size: 1.2rem;">
+                            <i class='bx bx-trash'></i>
+                        </a>
+                        {% else %}
+                        <span style="color: #ccc; font-size: 0.7rem; font-weight: 800;">ACTIVE SESSION</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="bottom-data">
+    <!-- AUDIT TRAIL -->
+    <div class="orders">
+        <div class="header" style="margin-bottom:15px;">
+            <h3 style="font-weight: 900; text-transform: uppercase; font-size: 0.9rem;">System Audit Trail</h3>
+            <p style="font-size: 0.7rem; color: #888;">Recent security events and logs</p>
+        </div>
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Timestamp</th>
+                    <th style="width: 15%;">User</th>
+                    <th style="text-align: center; width: 15%;">Action</th>
+                    <th style="width: 50%;">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="color:#888;">{{ log.timestamp|date:"M d, H:i" }}</td>
+                    <td><strong>{{ log.username }}</strong></td>
+                    <td style="text-align: center;">
+                        <span class="status completed">{{ log.action }}</span>
+                    </td>
+                    <td style="color:#666;">{{ log.action_details }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center; padding:30px; color:#ccc; font-weight: 800;">NO SYSTEM ACTIVITY LOGGED</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <h2 style="font-weight: 900; margin-bottom: 20px; font-size: 1.2rem; border-bottom: 3px solid #000; display: inline-block;">CREATE ACCOUNT</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <label>USERNAME</label>
+            <input type="text" name="username" placeholder="e.g. barista_shift1" required>
+            
+            <label>EMAIL</label>
+            <input type="email" name="email" placeholder="user@cravecast.com" required>
+            
+            <label>PASSWORD</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+            
+            <label>PERMISSION ROLE</label>
+            <select name="role">
+                <option value="Staff">Staff Access</option>
+                <option value="Owner">Full Owner Access</option>
+            </select>
+            
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button type="submit" name="add_user" class="btn-add btn-black-rect" style="flex:2;">Confirm Creation</button>
+                <button type="button" onclick="document.getElementById('userModal').style.display='none'" style="flex:1; background:none; border:none; color:#888; cursor:pointer; font-weight:800; text-transform:uppercase; font-size:0.6rem;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Close modal if user clicks outside
+    window.onclick = function(event) {
+        let modal = document.getElementById('userModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

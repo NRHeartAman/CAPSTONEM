@@ -1,0 +1,257 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}CraveCast Dashboard{% endblock %}</title>
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+    :root {
+        --light: #f6f6f9;
+        --primary: #1976D2;
+        --light-primary: #CFE8FF;
+        --grey: #eee;
+        --dark-grey: #AAAAAA;
+        --dark: #363949;
+        --danger: #D32F2F;
+        --brand-black: #000;
+        --white-bg: #fff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background: var(--grey); overflow-x: hidden; }
+    a { text-decoration: none; color: inherit; }
+
+    /* SIDEBAR */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 230px;
+        height: 100%;
+        background: var(--light);
+        overflow-y: auto;
+        transition: 0.3s;
+        z-index: 2000;
+    }
+
+    .sidebar .logo {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        font-weight: 800;
+        color: var(--brand-black);
+        font-size: 22px;
+    }
+
+    .sidebar ul { list-style: none; margin-top: 30px; }
+    .sidebar ul li { padding: 5px 20px; }
+
+    .sidebar ul li a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--dark);
+        padding: 12px 15px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    /* DYNAMIC ACTIVE STATE */
+    .sidebar ul li.active a {
+        background: var(--grey);
+        border-left: 5px solid var(--brand-black);
+        font-weight: 700;
+        color: var(--brand-black);
+        border-radius: 0 10px 10px 0;
+    }
+
+    .sidebar ul li a:hover { background: #e4e4e7; }
+
+    /* CONTENT */
+    .content { margin-left: 230px; transition: 0.3s; }
+
+    /* NAV */
+    nav {
+        height: 60px;
+        background: var(--light);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    nav img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
+
+    /* MAIN */
+    main { padding: 30px; min-height: 100vh; background: #fff; }
+
+    /* DASHBOARD ELEMENTS */
+    .dashboard-analytics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+    .analytics-card { background: #fff; border: 1px solid #eee; border-top: 4px solid #000; padding: 20px; }
+    .status { padding: 4px 10px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+
+    @media(max-width: 768px) {
+        .sidebar { width: 70px; }
+        .sidebar .logo span, .sidebar ul li a span { display: none; }
+        .content { margin-left: 70px; }
+    }
+
+    /* ===== ADDED: COLLAPSE FEATURE ===== */
+    .sidebar.collapsed {
+        width: 70px;
+    }
+
+    /* Smooth text hide */
+    .sidebar .logo span,
+    .sidebar ul li a span {
+    transition: opacity 0.2s ease, width 0.2s ease;
+    white-space: nowrap;
+    }
+
+    .sidebar.collapsed .logo span,
+    .sidebar.collapsed ul li a span {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    }
+
+    .sidebar.collapsed ul li a {
+        justify-content: center;
+        gap: 0;
+    }
+
+    .content.collapsed {
+        margin-left: 70px;
+    }
+
+    .sidebar,
+    .content {
+        transition: all 0.3s ease;
+    }
+    /* ===== END ADDED ===== */
+
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    
+    <a href="{% if request.user.role == 'OWNER' %}{% url 'owner-dashboard' %}{% else %}{% url 'staff-dashboard' %}{% endif %}" class="logo">
+    <img src="{% static 'images/logo.png' %}" alt="CraveCast Logo" style="width: 30px; height: 30px; margin-right: 8px; object-fit: contain;">
+    <span>Crave</span><span style="color: var(--primary);">Cast</span>
+</a>
+
+    <ul>
+        <li class="{% if request.resolver_match.url_name == 'owner-dashboard' %}active{% endif %}">
+            <a href="{% if request.user.role == 'OWNER' %}{% url 'owner-dashboard' %}{% else %}{% url 'staff-dashboard' %}{% endif %}">
+                <i class='bx bxs-dashboard'></i> <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'view-inventory' %}active{% endif %}">
+            <a href="{% url 'view-inventory' %}">
+                <i class='bx bx-package'></i> <span>Inventory</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'view-forecast' %}active{% endif %}">
+            <a href="{% url 'view-forecast' %}">
+                <i class='bx bx-analyse'></i> <span>Forecast</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'view-events' %}active{% endif %}">
+            <a href="{% url 'view-events' %}">
+                <i class='bx bx-calendar'></i> <span>Events</span>
+            </a>
+        </li>
+
+        {% if request.user.role == "OWNER" %}
+        <li class="{% if request.resolver_match.url_name == 'view-sales-trends' %}active{% endif %}">
+            <a href="{% url 'view-sales-trends' %}">
+                <i class='bx bx-line-chart'></i> <span>Sales Trends</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'view-upload-data' %}active{% endif %}">
+            <a href="{% url 'view-upload-data' %}">
+                <i class='bx bx-cloud-upload'></i> <span>Upload Data</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'admin-management' %}active{% endif %}">
+            <a href="{% url 'admin-management' %}">
+                <i class='bx bx-cloud-upload'></i> <span>Admin & Login</span>
+            </a>
+        </li>
+
+        <li class="{% if request.resolver_match.url_name == 'view-settings' %}active{% endif %}">
+            <a href="{% url 'view-settings' %}">
+                <i class='bx bx-cog'></i> <span>Settings</span>
+            </a>
+        </li>
+        {% endif %}
+
+        <li style="margin-top: 20px; border-top: 1px solid #eee;">
+            <a href="#" style="color: var(--danger);" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <i class='bx bx-log-out-circle'></i> <span>Logout</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<form id="logout-form" action="{% url 'logout' %}" method="POST" style="display: none;">
+    {% csrf_token %}
+</form>
+
+<div class="content">
+
+    <nav>
+        <i class='bx bx-menu' id="menu-btn"></i>
+        <div></div>
+        <a href="{% url 'view-settings' %}">
+            <img src="{% static 'images/logo.png' %}" alt="profile">
+        </a>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // ===== UPDATED: Toggle Sidebar =====
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+
+    menuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        content.classList.toggle('collapsed');
+    });
+    // ===== END UPDATE =====
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

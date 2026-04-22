@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sales Analytics - CraveCast{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --brand-black: #000;
+    --white-bg: #fff;
+    --grey-text: #666;
+    --border-color: #eee;
+}
+
+/* PAGE HEADER */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    margin-top: 5px;
+    letter-spacing: 1px;
+}
+
+/* BUTTONS */
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    padding: 12px 18px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.btn-black {
+    background: #000;
+    color: #fff;
+    border: 2px solid #000;
+}
+
+.btn-white {
+    background: #fff;
+    color: #000;
+    border: 2px solid #eee;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+}
+
+/* GRID */
+.inventory-sales-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* CARD */
+.sales-card {
+    background: #fff;
+    padding: 25px 20px;
+    border: 1px solid var(--border-color);
+    border-top: 4px solid var(--brand-black);
+    position: relative;
+    transition: 0.3s;
+}
+
+.sales-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.sales-card h3 {
+    font-size: 24px;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+.sales-card p {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--grey-text);
+    letter-spacing: 1px;
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+/* TOOLTIP */
+.summary-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    width: 200px;
+    background: var(--brand-black);
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: 0.3s;
+    font-size: 10px;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 10;
+    text-transform: uppercase;
+}
+
+.sales-card:hover .summary-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.summary-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border: 5px solid transparent;
+    border-top-color: #000;
+}
+
+/* TABLE */
+.bottom-data {
+    background: #fff;
+    border: 1px solid #eee;
+    margin-top: 20px;
+}
+
+.bottom-data .header {
+    padding: 20px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.bottom-data .header h3 {
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.bottom-data table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bottom-data thead th {
+    background: #fcfcfc;
+    padding: 15px;
+    font-size: 11px;
+    text-transform: uppercase;
+    text-align: left;
+    color: #888;
+    border-bottom: 1px solid #eee;
+}
+
+.bottom-data tbody td {
+    padding: 15px;
+    font-size: 13px;
+    border-bottom: 1px solid #f9f9f9;
+}
+
+/* RESPONSIVE */
+@media(max-width: 1024px) {
+    .inventory-sales-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media(max-width: 600px) {
+    .inventory-sales-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 15px; }
+}
+</style>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1>Sales Analytics</h1>
+        <p>Real-time Store Performance & Revenue Tracking</p>
+    </div>
+
+    <div class="btn-group">
+        <!-- LINK TO YOUR UPLOAD PAGE -->
+        <a href="{% url 'view-upload-data' %}" class="btn-action btn-white">
+            <i class="bx bx-upload"></i> Import CSV
+        </a>
+        <button class="btn-action btn-black" onclick="window.print()">
+            <i class="bx bx-download"></i> Export PDF
+        </button>
+    </div>
+</div>
+
+<!-- ANALYTICS CARDS -->
+<div class="inventory-sales-grid">
+
+    <!-- UNITS SOLD TODAY -->
+    <div class="sales-card">
+        <div class="summary-tooltip">
+            Top Performing Product:<br>
+            <span style="color: #4CAF50;">{{ top_product }}</span>
+        </div>
+        <h3>{{ units_sold_today }}</h3>
+        <p>Units Sold Today</p>
+    </div>
+
+    <!-- TOTAL ORDERS TODAY -->
+    <div class="sales-card">
+        <div class="summary-tooltip">
+            Total Unique Transactions<br>Processed Today
+        </div>
+        <h3>{{ total_orders_today }}</h3>
+        <p>Total Orders Today</p>
+    </div>
+
+    <!-- WEEKLY REVENUE -->
+    <div class="sales-card">
+        <div class="summary-tooltip">
+            Revenue from the last 7 days
+        </div>
+        <h3>₱{{ weekly_revenue }}</h3>
+        <p>Weekly Revenue</p>
+    </div>
+
+    <!-- MONTHLY REVENUE -->
+    <div class="sales-card">
+        <div class="summary-tooltip">
+            Revenue for current month
+        </div>
+        <h3>₱{{ monthly_revenue }}</h3>
+        <p>Monthly Revenue</p>
+    </div>
+
+</div>
+
+<!-- DATA TABLE -->
+<div class="bottom-data">
+
+    <div class="header">
+        <h3>Recent Transaction History</h3>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th style="text-align:center;">Quantity</th>
+                <th style="text-align:center;">Unit Price</th>
+                <th style="text-align:center;">Date of Sale</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for sale in sales %}
+            <tr>
+                <td><strong>{{ sale.product_name }}</strong></td>
+                <td style="text-align:center;">{{ sale.quantity }}</td>
+                <td style="text-align:center;">₱{{ sale.price }}</td>
+                <td style="text-align:center;">{{ sale.sale_date }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center; padding:50px; color: #aaa; text-transform: uppercase; font-size: 11px; font-weight: 800;">
+                    No recent transactions found in records.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

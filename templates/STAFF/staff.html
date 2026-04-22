@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Staff Dashboard - CraveCast{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Status Badges */
+    .status {
+        padding: 5px 12px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .process { background: #D32F2F; color: #fff; } /* Critical */
+    .pending { background: #000; color: #fff; }    /* Low */
+
+    /* Quick Action Links */
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    /* Table Styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    th {
+        text-align: left;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #888;
+        padding: 12px;
+        background: #fcfcfc;
+    }
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.85rem;
+    }
+
+    /* Chart Box Adjustments */
+    .chart-container {
+        padding: 25px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-top: 4px solid #000;
+        margin-bottom: 20px;
+    }
+</style>
+
+<!-- HEADER -->
+<div class="header">
+    <h1 style="font-weight: 900; font-size: 2.2rem;">Staff Dashboard</h1>
+    <p style="color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Shift Overview & Operational Tracking</p>
+</div>
+
+<!-- TOP ANALYTICS -->
+<div class="dashboard-analytics" style="margin-top: 20px;">
+
+    <div class="analytics-card">
+        <h3>{{ daily_sold|default:0 }}</h3>
+        <p>Units Sold Today</p>
+    </div>
+
+    <div class="analytics-card">
+        <h3>{{ daily_orders|default:0 }}</h3>
+        <p>Total Transactions</p>
+    </div>
+
+    <div class="analytics-card">
+        <h3>₱{{ weekly_sales|floatformat:2 }}</h3>
+        <p>7-Day Revenue</p>
+    </div>
+
+    <div class="analytics-card" style="border-top-color: #D32F2F;">
+        <h3>{{ low_stock_count|default:0 }}</h3>
+        <p>Low Stock Alerts</p>
+    </div>
+
+</div>
+
+<!-- SALES CHART -->
+<div class="chart-container">
+    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 20px; font-weight: 800;">
+        <i class='bx bx-line-chart'></i> 7-Day Sales Performance
+    </h3>
+    <canvas id="salesChart" height="100"></canvas>
+</div>
+
+<!-- QUICK ACTIONS (Navigation) -->
+<div class="dashboard-analytics" style="margin-bottom: 20px;">
+
+    <a href="{% url 'view-inventory' %}" class="card-link">
+        <div class="analytics-card">
+            <h3>Inventory</h3>
+            <p>Manage Stock</p>
+        </div>
+    </a>
+
+    <a href="{% url 'view-forecast' %}" class="card-link">
+        <div class="analytics-card">
+            <h3>Forecast</h3>
+            <p>Demand Engine</p>
+        </div>
+    </a>
+
+    <a href="{% url 'view-events' %}" class="card-link">
+        <div class="analytics-card">
+            <h3>Events</h3>
+            <p>Promos & Schedule</p>
+        </div>
+    </a>
+
+</div>
+
+<!-- LOW STOCK TABLE -->
+<div class="chart-container">
+    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 10px; font-weight: 800;">
+        <i class='bx bx-error-circle'></i> Stock Warnings
+    </h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Quantity Left</th>
+                <th>Priority</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in low_stock_items %}
+            <tr>
+                <td><strong>{{ item.item_name }}</strong></td>
+                <td>{{ item.stock_qty }} {{ item.unit }}</td>
+                <td>
+                    {% if item.stock_qty <= 5 %}
+                        <span class="status process">Critical</span>
+                    {% else %}
+                        <span class="status pending">Low Stock</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3" style="text-align:center; padding:30px; color:#aaa; font-weight: 700; text-transform: uppercase; font-size: 0.7rem;">
+                    All inventory levels are optimal.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('salesChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    label: 'Daily Revenue (₱)',
+                    data: {{ chart_values|safe }},
+                    borderColor: '#000',
+                    backgroundColor: 'rgba(0,0,0,0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#000'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { weight: 'bold', size: 10 } }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { font: { weight: 'bold', size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

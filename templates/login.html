@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraveCast - Access</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        h2 { margin-bottom: 20px; font-weight: 800; color: #333; text-transform: uppercase; font-size: 1.2rem; }
+
+        input, select {
+            width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd;
+            border-radius: 10px; background: #f9f9f9; box-sizing: border-box; font-size: 14px;
+        }
+
+        button {
+            width: 100%; padding: 12px; background: #000; color: #fff; border: none;
+            border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+
+        button:hover { background: #333; }
+
+        .toggle { margin-top: 20px; font-size: 0.85rem; color: #666; cursor: pointer; text-decoration: underline; }
+
+        /* Error Styling */
+        .msg-error {
+            color: #D32F2F;
+            background: #FFEBEE;
+            padding: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN BOX -->
+    <div class="container" id="loginBox" {% if 'reg_error' in request.GET or 'reg_success' in request.GET %}style="display:none;"{% endif %}>
+        <h2>CraveCast Login</h2>
+
+        <!-- Only show messages tagged with 'login_fail' -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if 'login_fail' in message.tags %}
+                    <div class="msg-error">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="toggle" onclick="toggleForm()">
+            Don't have an account? Register
+        </div>
+    </div>
+
+    <!-- REGISTER BOX -->
+    <div class="container" id="registerBox" {% if 'reg_error' in request.GET or 'reg_success' in request.GET %}style="display:block;"{% else %}style="display:none;"{% endif %}>
+        <h2>Create Account</h2>
+
+        <!-- Only show messages tagged with 'reg_fail' -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if 'reg_fail' in message.tags %}
+                    <div class="msg-error">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'auth' %}">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email Address" required>
+            <input type="password" name="password" placeholder="Password" required>
+
+            <select name="role">
+                <option value="Staff">Staff</option>
+                <option value="Owner">Owner</option>
+            </select>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <div class="toggle" onclick="toggleForm()">
+            Already have an account? Login
+        </div>
+    </div>
+
+    <script>
+        function toggleForm() {
+            var l = document.getElementById('loginBox');
+            var r = document.getElementById('registerBox');
+
+            if (l.style.display === "none") {
+                l.style.display = "block";
+                r.style.display = "none";
+            } else {
+                l.style.display = "none";
+                r.style.display = "block";
+            }
+        }
+    </script>
+
+</body>
+</html>

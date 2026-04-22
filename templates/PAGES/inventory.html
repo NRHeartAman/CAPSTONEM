@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CraveCast - Inventory{% endblock %}
+
+{% block content %}
+
+<style>
+    :root { --brand-black: #000000; --white-bg: #ffffff; --grey-text: #666666; }
+
+    .sales-card { background:#fff; padding:20px; border:1px solid #e0e0e0; border-top:4px solid #000; transition: 0.3s; }
+    .sales-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    
+    .tab-btn { padding:12px 25px; text-decoration:none; color:#888; font-weight:800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; border-bottom: 2px solid transparent; }
+    .active-tab { color: #000 !important; border-bottom: 3px solid #000; }
+
+    table { width:100%; border-collapse: collapse; background:#fff; margin-top:10px; border: 1px solid #eee; }
+    th { background: #f9f9f9; padding:15px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; text-align: left; }
+    td { padding:15px; border-bottom:1px solid #eee; font-size: 0.9rem; }
+
+    .status { padding:5px 12px; font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing: 1px; }
+    .process { background:#000; color:#fff; }
+    .completed { background:#eee; color:#333; }
+
+    .btn-add {
+        background: #000;
+        color: #fff;
+        padding: 12px 20px;
+        border: 2px solid #000;
+        font-weight: 800;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        transition: 0.3s;
+    }
+    .btn-add:hover { background: #fff; color: #000; }
+
+    /* MODAL */
+    .modal { display: none; position: fixed; z-index: 2001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
+    .modal-content { background-color: #fff; margin: 8% auto; padding: 35px; width: 400px; position: relative; }
+    .modal-content h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; margin-bottom: 25px; border-bottom: 3px solid #000; display: inline-block; }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.65rem; font-weight: 800; margin-bottom: 5px; color: #888; text-transform: uppercase; }
+    .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; font-family: inherit; }
+    .form-group input:focus { outline: none; border-color: #000; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+    <div>
+        <h1 style="font-weight: 900; font-size: 2.2rem;">Inventory Management</h1>
+        <p style="color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Track and manage your ingredients and shop supplies</p>
+    </div>
+    <button class="btn-add" onclick="openModal()">+ Add New Entry</button>
+</div>
+
+<!-- SALES CARDS -->
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:30px;">
+    <div class="sales-card">
+        <h3 style="font-size: 1.8rem; font-weight: 900;">₱{{ daily_sales|default:"0" }}</h3>
+        <p>Daily Sales</p>
+    </div>
+    <div class="sales-card">
+        <h3 style="font-size: 1.8rem; font-weight: 900;">₱{{ weekly_sales|default:"0" }}</h3>
+        <p>Weekly Sales</p>
+    </div>
+    <div class="sales-card">
+        <h3 style="font-size: 1.8rem; font-weight: 900;">₱{{ monthly_sales|default:"0" }}</h3>
+        <p>Monthly Sales</p>
+    </div>
+</div>
+
+<!-- TABS -->
+<div style="margin-bottom:20px; border-bottom: 1px solid #eee;">
+    <a href="?tab=Stock" class="tab-btn {% if current_tab == 'Stock' %}active-tab{% endif %}">Ingredients</a>
+    <a href="?tab=Supply" class="tab-btn {% if current_tab == 'Supply' %}active-tab{% endif %}">Supplies</a>
+</div>
+
+<!-- TABLE -->
+<table>
+    <thead>
+        <tr>
+            <th>Item Name</th>
+            <th>Initial Stock</th>
+            <th>Current Level</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in inventory %}
+        <tr>
+            <td><strong>{{ item.item_name }}</strong></td>
+            <td>{{ item.total_stock }} {{ item.unit }}</td>
+            <td style="font-weight: 800;">{{ item.stock_qty }} {{ item.unit }}</td>
+            <td>
+                {% if item.stock_qty <= 20 %}
+                    <span class="status process">Low Stock</span>
+                {% else %}
+                    <span class="status completed">Stable</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; padding: 40px; color:#aaa; text-transform: uppercase; font-size: 0.7rem; font-weight: 800;">No items found in {{ current_tab }} category.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ADD ENTRY MODAL -->
+<div id="entryModal" class="modal">
+    <div class="modal-content">
+        <h2>New Entry</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="item_name" required placeholder="e.g. Arabica Beans">
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Initial Stock</label>
+                    <input type="number" name="total_stock" required>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <input type="text" name="unit" placeholder="kg / pcs" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Current Quantity</label>
+                <input type="number" name="stock_qty" required>
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="Stock" {% if current_tab == 'Stock' %}selected{% endif %}>Ingredient (Stock)</option>
+                    <option value="Supply" {% if current_tab == 'Supply' %}selected{% endif %}>Supply</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:30px;">
+                <button type="submit" class="btn-add" style="flex:1;">Save Configuration</button>
+                <button type="button" onclick="closeModal()" style="flex:1; background:#eee; border:none; cursor:pointer; font-weight:800; text-transform: uppercase; font-size: 0.7rem;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const modal = document.getElementById("entryModal");
+
+    function openModal() {
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    // Close modal if user clicks the dark background
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

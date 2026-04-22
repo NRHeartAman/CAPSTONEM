@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Owner Dashboard - CraveCast{% endblock %}
+
+{% block content %}
+<style>
+    /* TOOLTIP STYLING */
+    .analytics-card { position: relative; overflow: visible; } /* Changed overflow to visible */
+    
+    .summary-tooltip {
+        visibility: hidden;
+        opacity: 0;
+        width: 180px;
+        background: #000;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        position: absolute;
+        bottom: 115%;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: 0.3s;
+        font-size: 10px;
+        font-weight: 800;
+        z-index: 999;
+        text-transform: uppercase;
+        pointer-events: none;
+        border-radius: 4px;
+    }
+    .analytics-card:hover .summary-tooltip { visibility: visible; opacity: 1; }
+    .summary-tooltip::after {
+        content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px;
+        border: 5px solid transparent; border-top-color: #000;
+    }
+
+    /* Table & Status */
+    .status { padding: 5px 12px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .process { background: #D32F2F; color: #fff; }
+    .pending { background: #000; color: #fff; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { text-align: left; font-size: 0.7rem; text-transform: uppercase; color: #888; padding: 12px; background: #fcfcfc; }
+    td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+
+    /* Fix: Add a height to the chart wrapper */
+    .chart-wrapper {
+        position: relative;
+        height: 300px; /* Force a height for Chart.js */
+        width: 100%;
+    }
+    .chart-container { padding: 25px; background: #fff; border: 1px solid #eee; border-top: 4px solid #000; margin-bottom: 20px; }
+</style>
+
+<div class="header">
+    <h1 style="font-weight: 900; font-size: 2.2rem;">Owner Dashboard</h1>
+    <p style="color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Business Overview & Control Panel</p>
+</div>
+
+<div class="dashboard-analytics" style="margin-top: 20px;">
+    <div class="analytics-card">
+        <div class="summary-tooltip">Total products sold today</div>
+        <h3>{{ daily_sold|default:0 }}</h3>
+        <p>Units Sold Today</p>
+    </div>
+    <div class="analytics-card">
+        <div class="summary-tooltip">Number of orders today</div>
+        <h3>{{ daily_orders|default:0 }}</h3>
+        <p>Total Transactions</p>
+    </div>
+    <div class="analytics-card">
+        <div class="summary-tooltip">Revenue for last 7 days</div>
+        <h3>₱{{ weekly_sales|floatformat:2 }}</h3>
+        <p>7-Day Revenue</p>
+    </div>
+    <div class="analytics-card" style="border-top-color: #D32F2F;">
+        <div class="summary-tooltip">Stock levels below threshold</div>
+        <h3>{{ low_stock_count|default:0 }}</h3>
+        <p>Low Stock Alerts</p>
+    </div>
+</div>
+
+<div class="chart-container">
+    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 20px; font-weight: 800;">
+        <i class='bx bx-line-chart'></i> 7-Day Sales Performance
+    </h3>
+    <div class="chart-wrapper">
+        <canvas id="salesChart"></canvas>
+    </div>
+</div>
+
+<div class="dashboard-analytics" style="margin-bottom: 20px;">
+    <a href="{% url 'view-inventory' %}" style="text-decoration:none; color:inherit;">
+        <div class="analytics-card"><h3>Inventory</h3><p>Manage Stock</p></div>
+    </a>
+    <a href="{% url 'view-forecast' %}" style="text-decoration:none; color:inherit;">
+        <div class="analytics-card"><h3>Forecast</h3><p>Demand Engine</p></div>
+    </a>
+    <a href="{% url 'view-events' %}" style="text-decoration:none; color:inherit;">
+        <div class="analytics-card"><h3>Events</h3><p>Promos</p></div>
+    </a>
+    <a href="{% url 'view-upload-data' %}" style="text-decoration:none; color:inherit;">
+        <div class="analytics-card"><h3>Upload</h3><p>CSV Import</p></div>
+    </a>
+</div>
+
+<div class="chart-container">
+    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 10px; font-weight: 800;">
+        <i class='bx bx-error-circle'></i> Stock Warnings
+    </h3>
+    <table>
+        <thead>
+            <tr><th>Item Name</th><th>Quantity Left</th><th>Priority</th></tr>
+        </thead>
+        <tbody>
+        {% for item in low_stock_items %}
+            <tr>
+                <td><strong>{{ item.item_name }}</strong></td>
+                <td>{{ item.stock_qty }} {{ item.unit }}</td>
+                <td>
+                    {% if item.stock_qty <= 5 %}<span class="status process">Critical</span>
+                    {% else %}<span class="status pending">Low</span>{% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3" style="text-align:center; padding:30px; color:#aaa; font-weight:700;">STOCKS ARE STABLE</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Note: Chart.js is already in base.html head, so we don't reload it here -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('salesChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            
+            // Fix: Add default empty arrays to prevent JS crash if data is missing
+            const chartLabels = {{ chart_labels|safe|default:"[]" }};
+            const chartValues = {{ chart_values|safe|default:"[]" }};
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: chartValues,
+                        borderColor: '#000000',
+                        backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Now works because parent has height
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } },
+                        y: { beginAtZero: true, ticks: { callback: v => '₱' + v } }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
