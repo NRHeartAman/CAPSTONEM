@@ -246,21 +246,3 @@ def events_view(request):
     })
 
 
-@login_required
-def toggle_archive_event(request, pk):
-    if getattr(request.user, 'role', '').strip().upper() != 'OWNER':
-        messages.error(request, 'Access Denied.')
-        return redirect('view-events')
-
-    try:
-        event = OwnerEvent.objects.get(pk=pk)
-        event.is_archived = not event.is_archived
-        event.save()
-        action = 'archived' if event.is_archived else 'restored'
-        messages.success(request, f'"{event.event_name}" has been {action}.')
-    except OwnerEvent.DoesNotExist:
-        messages.error(request, 'Event not found.')
-
-    return redirect('view-events')
-
-
