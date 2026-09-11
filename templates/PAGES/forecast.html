@@ -502,6 +502,8 @@
 {% block extra_js %}
 <script>
     const DEFAULT_CITY = "{{ default_city|escapejs }}";
+    const DEFAULT_LAT  = {{ default_lat|default:14.4667 }};
+    const DEFAULT_LON  = {{ default_lon|default:121.1833 }};
 
     const cityInput        = document.querySelector("#city_input");
     const searchBtn        = document.querySelector("#searchBtn");
@@ -625,8 +627,10 @@
         });
     }
 
-    async function getWeatherAndForecast(cityName) {
-        const URL = `/forecast/weather-api/?city=${encodeURIComponent(cityName)}`;
+    async function getWeatherAndForecast(cityName, coords) {
+        const URL = coords
+            ? `/forecast/weather-api/?lat=${coords.lat}&lon=${coords.lon}`
+            : `/forecast/weather-api/?city=${encodeURIComponent(cityName)}`;
         try {
             const response = await fetch(URL);
             const data     = await response.json();
@@ -742,6 +746,6 @@
         }
     });
 
-    window.addEventListener("load", () => getWeatherAndForecast(DEFAULT_CITY));
+    window.addEventListener("load", () => getWeatherAndForecast(DEFAULT_CITY, { lat: DEFAULT_LAT, lon: DEFAULT_LON }));
 </script>
 {% endblock %}

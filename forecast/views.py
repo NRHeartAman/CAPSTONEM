@@ -47,11 +47,13 @@ def forecast_view(request):
     if predicted_cups is None:
         predicted_cups = "Need more data"
 
-    default_city, _lat, _lon = _get_store_location()
+    default_city, default_lat, default_lon = _get_store_location()
 
     return render(request, 'PAGES/forecast.html', {
         'predicted_cups': predicted_cups,
         'default_city':   default_city,
+        'default_lat':    default_lat,
+        'default_lon':    default_lon,
     })
 
 
