@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+media/
+sales_uploads/
+*.log
+.vscode/
+.idea/
+cravecast.db
+cravecast_backup.sql
