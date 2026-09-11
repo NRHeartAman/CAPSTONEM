@@ -25,7 +25,13 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+
+# Used to build every link sent in an email - fixed and configured rather
+# than derived from whatever host the current request happened to arrive
+# on, so activation/reset/alert links work regardless of which device or
+# address the Owner/Staff member was using when the email was triggered.
+SITE_BASE_URL = os.environ.get('SITE_BASE_URL', 'http://127.0.0.1:8000').rstrip('/')
 
 
 # =========================

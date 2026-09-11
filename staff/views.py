@@ -33,7 +33,7 @@ def _notify_owner_new_request(request, kind, summary):
     if not owner_emails:
         return
 
-    approvals_url = request.build_absolute_uri('/owner/approvals/')
+    approvals_url = f'{settings.SITE_BASE_URL}/owner/approvals/'
     subject = f"[CraveCast] New {kind} request pending approval"
     message = (
         f"Hi Owner,\n\n"

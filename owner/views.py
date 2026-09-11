@@ -24,6 +24,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.conf import settings
 from .models import SystemSetting, StaffInvite, InventoryRequest, EventRequest, SalesUploadRequest
 from accounts.models import ActivityLog, EmployeeProfile, User
 from sales.models import SalesRecord
@@ -596,7 +597,7 @@ def admin_management_view(request):
         new_user.save()
 
         invite       = StaffInvite.objects.create(user=new_user)
-        activate_url = request.build_absolute_uri(f'/owner/approve-staff/{invite.token}/')
+        activate_url = f'{settings.SITE_BASE_URL}/owner/approve-staff/{invite.token}/'
 
         try:
             send_mail(
@@ -643,7 +644,7 @@ def admin_management_view(request):
     if 'resend_approval' in request.GET:
         target       = get_object_or_404(User, pk=request.GET['resend_approval'])
         invite       = get_object_or_404(StaffInvite, user=target, approved=False)
-        activate_url = request.build_absolute_uri(f'/owner/approve-staff/{invite.token}/')
+        activate_url = f'{settings.SITE_BASE_URL}/owner/approve-staff/{invite.token}/'
         try:
             send_mail(
                 subject='[CraveCast] Activate Your Account',

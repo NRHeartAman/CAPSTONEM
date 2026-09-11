@@ -290,7 +290,7 @@ def forgot_password(request):
         expires_at = timezone.now() + timedelta(hours=1)
         PasswordResetToken.objects.create(token=token_value, user_role=role, user_id=user.pk, expires_at=expires_at)
 
-        reset_url = f"{request.scheme}://{request.get_host()}/reset-password/{token_value}/?role={role}"
+        reset_url = f"{settings.SITE_BASE_URL}/reset-password/{token_value}/?role={role}"
         _send_reset_email(email, reset_url, role, user)
 
         return redirect('password_reset_sent_staff' if role == 'staff' else 'password_reset_sent_owner')
