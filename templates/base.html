@@ -789,37 +789,6 @@ document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) closeModal(e.target.id);
 });
 
-/* ── PREP TASK TOGGLE ─────────────────────────────────── */
-const TOGGLE_URL = "{% url 'toggle-prep-task' pk=0 %}".replace('/0/', '/');
-const CSRF = "{{ csrf_token }}";
-
-function togglePrepTask(el, pk) {
-    fetch(TOGGLE_URL + pk + '/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': CSRF }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const row   = document.getElementById('prep-item-' + pk);
-        const title = row.querySelector('.prep-details h4');
-        el.innerHTML = data.is_done
-            ? "<i class='bx bx-check' style='color:var(--purple);font-size:14px;font-weight:bold;'></i>"
-            : "";
-        el.style.borderColor       = data.is_done ? 'var(--purple)' : 'var(--border)';
-        row.style.opacity          = data.is_done ? '0.5' : '1';
-        title.style.textDecoration = data.is_done ? 'line-through' : 'none';
-        title.style.color          = data.is_done ? 'var(--text-muted)' : 'var(--text)';
-        updateCounter();
-    });
-}
-
-function updateCounter() {
-    const total = document.querySelectorAll('#prepList .prep-item').length;
-    const done  = [...document.querySelectorAll('#prepList .prep-item')]
-                  .filter(el => el.style.opacity === '0.5').length;
-    document.getElementById('prep-counter').textContent = done + '/' + total + ' Done';
-}
-
 /* ── CLOCK ────────────────────────────────────────────── */
 function updateClock() {
     const now  = new Date();
