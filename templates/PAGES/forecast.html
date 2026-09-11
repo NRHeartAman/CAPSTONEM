@@ -542,76 +542,76 @@
         return "🌤";
     }
 
-    function estimateDemand(tempC, humidityPct, dayIndex) {
-        const base        = 80;
-        const tempFactor  = (tempC - 28) * 2.5;
-        const humidFactor = (humidityPct - 70) * 0.4;
-        const dayFactors  = [0.85, 1.0, 1.0, 1.05, 1.1, 1.25, 1.2];
-        return Math.max(10, Math.round((base + tempFactor + humidFactor) * dayFactors[dayIndex]));
-    }
-
-    function buildDailyData(forecastList) {
+    /* Groups the OpenWeatherMap 3-hourly list into one real forecast
+       temperature per upcoming day, for the /forecast/monthly-api/ call -
+       the actual demand prediction happens server-side against real
+       sales history, never guessed client-side. */
+    function buildForecastDatesTemps(forecastList) {
         const dayMap = {};
         forecastList.forEach(item => {
             const date = new Date(item.dt * 1000);
-            const key  = date.toDateString();
-            if (!dayMap[key]) dayMap[key] = { date, temps: [], humids: [] };
-            dayMap[key].temps.push(item.main.temp);
-            dayMap[key].humids.push(item.main.humidity);
+            const key  = date.toISOString().slice(0, 10);
+            if (!dayMap[key]) dayMap[key] = [];
+            dayMap[key].push(item.main.temp);
         });
 
-        return Object.values(dayMap).slice(1).map(d => {
-            const avgTemp  = Math.round(d.temps.reduce((a,b) => a+b, 0) / d.temps.length);
-            const avgHumid = Math.round(d.humids.reduce((a,b) => a+b, 0) / d.humids.length);
-            return { date: d.date, temp: avgTemp, humid: avgHumid, demand: estimateDemand(avgTemp, avgHumid, d.date.getDay()) };
+        const dates = [];
+        const temps = [];
+        Object.keys(dayMap).sort().slice(1).forEach(key => {
+            const temps_for_day = dayMap[key];
+            const avg = temps_for_day.reduce((a, b) => a + b, 0) / temps_for_day.length;
+            dates.push(key);
+            temps.push(avg.toFixed(1));
         });
+        return { dates, temps };
     }
 
-    function renderMonthly(days) {
-        const now         = new Date();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    function renderMonthly(apiData) {
+        const now = new Date();
         document.getElementById("monthLabel").textContent = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
-        const avgDailyDemand = days.reduce((sum, d) => sum + d.demand, 0) / days.length;
-        const monthlyTotal   = Math.round(avgDailyDemand * daysInMonth);
-        const avgPerDay      = Math.round(avgDailyDemand);
+        if (!apiData.has_enough_data) {
+            document.getElementById("monthTotal").textContent    = L("Need more data", "Kulang pa ang datos");
+            document.getElementById("monthAvgDay").textContent   = "--";
+            document.getElementById("monthPeakWeek").textContent = "--";
+            document.getElementById("monthPeakRange").textContent = L("Upload at least 5 days of sales data", "Mag-upload ng 5+ araw na sales data");
+            document.getElementById("monthBars").innerHTML = "";
+            return;
+        }
 
-        const weekFactors  = [0.93, 1.0, 1.07, 1.0];
-        const weekTotals   = weekFactors.map(f => Math.round(avgDailyDemand * 7 * f));
-        const peakWeekIdx  = weekTotals.indexOf(Math.max(...weekTotals));
-        const maxWeekTotal = Math.max(...weekTotals);
+        const weekly       = apiData.weekly;
+        const weekTotals    = weekly.map(w => w.total);
+        const maxWeekTotal  = Math.max(...weekTotals, 1);
+        const peakLabel     = apiData.peak_week ? apiData.peak_week.label : null;
 
-        document.getElementById("monthTotal").textContent    = monthlyTotal.toLocaleString();
-        document.getElementById("monthAvgDay").textContent   = avgPerDay;
-        document.getElementById("monthPeakWeek").textContent = `${L("Week", "Linggo")} ${peakWeekIdx + 1}`;
+        document.getElementById("monthTotal").textContent    = apiData.monthly_total.toLocaleString();
+        document.getElementById("monthAvgDay").textContent   = apiData.avg_per_day;
 
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const peakStart    = new Date(startOfMonth);
-        peakStart.setDate(1 + peakWeekIdx * 7);
-        const peakEnd = new Date(peakStart);
-        peakEnd.setDate(peakStart.getDate() + 6);
-        document.getElementById("monthPeakRange").textContent =
-            `${peakStart.getDate()} – ${Math.min(peakEnd.getDate(), daysInMonth)} ${MONTHS[now.getMonth()]}`;
+        if (apiData.peak_week) {
+            const peakWeekNum = L(apiData.peak_week.label, apiData.peak_week.label.replace('Week', 'Linggo'));
+            document.getElementById("monthPeakWeek").textContent = peakWeekNum;
+            const ps = new Date(apiData.peak_week.range_start);
+            const pe = new Date(apiData.peak_week.range_end);
+            document.getElementById("monthPeakRange").textContent =
+                `${ps.getDate()} ${MONTHS[ps.getMonth()]} – ${pe.getDate()} ${MONTHS[pe.getMonth()]}`;
+        }
 
-        const weekWord    = L("Week", "Linggo");
-        const WEEK_LABELS = [1,2,3,4].map(n => `${weekWord} ${n}`);
-        const currentWeek = Math.floor((now.getDate() - 1) / 7);
+        const currentWeekIdx = 0; // apiData.weekly[0] always starts today, by construction of monthly-api
 
         const barsEl = document.getElementById("monthBars");
-        barsEl.innerHTML = weekTotals.map((total, i) => {
-            const heightPct = Math.round((total / maxWeekTotal) * 100);
-            const isPast    = i < currentWeek;
-            const isCurr    = i === currentWeek;
-            const isFuture  = i > currentWeek;
+        barsEl.innerHTML = weekly.map((w, i) => {
+            const heightPct = Math.round((w.total / maxWeekTotal) * 100);
+            const isCurr    = i === currentWeekIdx;
             const colCls    = isCurr ? "is-current-week" : "";
-            const barCls    = isCurr ? "is-current-week" : isPast ? "is-past" : isFuture ? "is-future" : "";
-            const isPeak    = i === peakWeekIdx;
+            const barCls    = isCurr ? "is-current-week" : (w.source === 'historical' ? "is-past" : "is-future");
+            const isPeak    = w.label === peakLabel;
+            const weekLabel = L(w.label, w.label.replace('Week', 'Linggo'));
             return `
             <div class="month-bar-col ${colCls}">
                 ${isPeak ? `<div class="month-bar-peak-badge">${L("Peak", "Pinakamataas")}</div>` : ''}
-                <div class="month-bar-val">${total}</div>
-                <div class="month-bar ${barCls}" data-target-height="${heightPct}" title="${WEEK_LABELS[i]}: ${total} units"></div>
-                <div class="month-bar-label">${WEEK_LABELS[i]}</div>
+                <div class="month-bar-val">${w.total}</div>
+                <div class="month-bar ${barCls}" data-target-height="${heightPct}" title="${weekLabel}: ${w.total} units"></div>
+                <div class="month-bar-label">${weekLabel}</div>
             </div>`;
         }).join("");
 
@@ -639,8 +639,16 @@
             const temp     = Math.round(data.list[0].main.temp);
             const humidity = data.list[0].main.humidity;
             fetchMLPrediction(temp, humidity);
-            const dailyData = buildDailyData(data.list);
-            renderMonthly(dailyData);
+
+            const { dates, temps } = buildForecastDatesTemps(data.list);
+            try {
+                const monthlyRes = await fetch(
+                    `/forecast/monthly-api/?dates=${encodeURIComponent(dates.join(','))}&temps=${encodeURIComponent(temps.join(','))}`
+                );
+                renderMonthly(await monthlyRes.json());
+            } catch (err) {
+                console.error('Monthly forecast error:', err);
+            }
         } catch (error) {
             predictionReason.textContent = L("Connection error. Check your network.", "May problema sa koneksyon. Suriin ang iyong internet.");
         }
