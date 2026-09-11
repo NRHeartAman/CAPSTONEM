@@ -137,7 +137,7 @@
             </div>
             <div class="form-group">
                 <label data-en="Weather API Key (OpenWeatherMap)" data-tl="Weather API Key (OpenWeatherMap)">Weather API Key (OpenWeatherMap)</label>
-                <input type="password" name="weather_api_key" value="{{ config.weather_api_key }}"
+                <input type="password" name="weather_api_key" value="{{ config.weather_api_key|default:'' }}"
                     data-en-placeholder="Enter API key..." data-tl-placeholder="Ilagay ang API key..." placeholder="Enter API key...">
             </div>
             <div class="form-group">

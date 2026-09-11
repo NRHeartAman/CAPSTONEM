@@ -387,7 +387,7 @@
         <h1 data-en="Demand Forecast" data-tl="Demand Forecast">Demand Forecast</h1>
         <div class="location-pill">
             <div class="location-dot"></div>
-            <span><span data-en="Tracking" data-tl="Sinusubaybayan">Tracking</span>: <strong id="locationLabel" style="color: var(--text);">Binangonan, PH</strong></span>
+            <span><span data-en="Tracking" data-tl="Sinusubaybayan">Tracking</span>: <strong id="locationLabel" style="color: var(--text);">{{ default_city }}</strong></span>
         </div>
     </div>
     <div class="search-row">
@@ -501,7 +501,7 @@
 
 {% block extra_js %}
 <script>
-    const API_KEY = "317203ed9c8ce2df206a3b5451c60bce";
+    const DEFAULT_CITY = "{{ default_city|escapejs }}";
 
     const cityInput        = document.querySelector("#city_input");
     const searchBtn        = document.querySelector("#searchBtn");
@@ -626,8 +626,7 @@
     }
 
     async function getWeatherAndForecast(cityName) {
-        if (!API_KEY) return;
-        const URL = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=metric&appid=${API_KEY}`;
+        const URL = `/forecast/weather-api/?city=${encodeURIComponent(cityName)}`;
         try {
             const response = await fetch(URL);
             const data     = await response.json();
@@ -736,14 +735,13 @@
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async pos => {
                 const { latitude, longitude } = pos.coords;
-                const GEO_URL = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${API_KEY}`;
-                const res = await fetch(GEO_URL);
+                const res = await fetch(`/forecast/weather-geo-api/?lat=${latitude}&lon=${longitude}`);
                 const geo = await res.json();
                 if (geo.length > 0) getWeatherAndForecast(geo[0].name);
             });
         }
     });
 
-    window.addEventListener("load", () => getWeatherAndForecast("Binangonan"));
+    window.addEventListener("load", () => getWeatherAndForecast(DEFAULT_CITY));
 </script>
 {% endblock %}

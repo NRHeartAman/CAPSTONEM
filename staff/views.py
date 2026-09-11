@@ -18,6 +18,17 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
+def _owner_emails():
+    """Every active Owner account's real, currently-registered email -
+    never a hardcoded address, so this stays correct if an Owner changes
+    their email via Settings."""
+    return list(
+        User.objects.filter(role='OWNER', is_active=True)
+        .exclude(email='')
+        .values_list('email', flat=True)
+    )
+
+
 def _notify_owner_new_request(request, kind, summary):
     """
     Alerts every active Owner account by email that a new request is
@@ -25,11 +36,7 @@ def _notify_owner_new_request(request, kind, summary):
     aware of it; approving it still requires reaching the running system,
     same as today.
     """
-    owner_emails = list(
-        User.objects.filter(role='OWNER', is_active=True)
-        .exclude(email='')
-        .values_list('email', flat=True)
-    )
+    owner_emails = _owner_emails()
     if not owner_emails:
         return
 
@@ -66,11 +73,13 @@ def staff_dashboard_view(request):
             f"They have been restricted. Go to Owner Accounts Management to activate them.\n\n"
             f"Security System Control,\nCraveCast Monitoring"
         )
-        try:
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
-                      ['cravecast26@gmail.com'], fail_silently=False)
-        except Exception:
-            pass
+        owner_emails = _owner_emails()
+        if owner_emails:
+            try:
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
+                          owner_emails, fail_silently=False)
+            except Exception:
+                pass
         return render(request, 'STAFF/awaiting_approval.html',
                       {'staff_username': request.user.username})
 

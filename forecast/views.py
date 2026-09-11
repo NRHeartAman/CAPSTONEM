@@ -1,9 +1,40 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 import datetime
+import requests
 
 from .ml_engine import train_and_predict, predict_per_product, get_historical_avg_temp
+
+
+def _get_weather_api_key():
+    """The Owner's own key (Settings) wins when set; otherwise the
+    server-configured default. Never sent to the browser - only used
+    here, server-side, by the proxy views below."""
+    try:
+        from owner.models import SystemSetting
+        config = SystemSetting.objects.first()
+        key = (config.weather_api_key or '').strip() if config else ''
+        if key and key.lower() != 'none':
+            return key
+    except Exception:
+        pass
+    return settings.OPENWEATHER_API_KEY
+
+
+def _get_store_location():
+    """(city, lat, lon) from the Owner's configured store, falling back
+    to sane defaults if Settings has never been saved."""
+    try:
+        from owner.models import SystemSetting
+        config = SystemSetting.objects.first()
+        if config:
+            city = config.store_name.split(',')[0].strip() if config.store_name else 'Binangonan'
+            return city, config.store_lat, config.store_lon
+    except Exception:
+        pass
+    return 'Binangonan', 14.4667, 121.1833
 
 
 @login_required
@@ -16,9 +47,63 @@ def forecast_view(request):
     if predicted_cups is None:
         predicted_cups = "Need more data"
 
+    default_city, _lat, _lon = _get_store_location()
+
     return render(request, 'PAGES/forecast.html', {
-        'predicted_cups': predicted_cups
+        'predicted_cups': predicted_cups,
+        'default_city':   default_city,
     })
+
+
+@login_required
+def weather_forecast_proxy(request):
+    """
+    Proxies OpenWeatherMap's 5-day/3-hour forecast so the real API key
+    never reaches the browser. Accepts ?city= or ?lat=&lon=.
+    """
+    api_key = _get_weather_api_key()
+    if not api_key:
+        return JsonResponse({'cod': '401', 'message': 'No weather API key configured.'}, status=200)
+
+    city = request.GET.get('city', '').strip()
+    lat  = request.GET.get('lat')
+    lon  = request.GET.get('lon')
+
+    params = {'units': 'metric', 'appid': api_key}
+    if lat and lon:
+        params['lat'] = lat
+        params['lon'] = lon
+    else:
+        params['q'] = city or _get_store_location()[0]
+
+    try:
+        r = requests.get('https://api.openweathermap.org/data/2.5/forecast', params=params, timeout=8)
+        return JsonResponse(r.json(), status=r.status_code, safe=False)
+    except requests.RequestException:
+        return JsonResponse({'cod': '500', 'message': 'Weather service unreachable.'}, status=200)
+
+
+@login_required
+def weather_geo_reverse_proxy(request):
+    """Proxies OpenWeatherMap's reverse-geocoding lookup (device GPS -> city name)."""
+    api_key = _get_weather_api_key()
+    if not api_key:
+        return JsonResponse([], safe=False)
+
+    lat = request.GET.get('lat')
+    lon = request.GET.get('lon')
+    if not lat or not lon:
+        return JsonResponse([], safe=False)
+
+    try:
+        r = requests.get(
+            'https://api.openweathermap.org/geo/1.0/reverse',
+            params={'lat': lat, 'lon': lon, 'limit': 1, 'appid': api_key},
+            timeout=8,
+        )
+        return JsonResponse(r.json(), safe=False, status=r.status_code)
+    except requests.RequestException:
+        return JsonResponse([], safe=False)
 
 
 @login_required

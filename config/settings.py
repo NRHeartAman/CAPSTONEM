@@ -208,7 +208,16 @@ EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
 
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 
-DEFAULT_FROM_EMAIL = 'CraveCast Security <cravecast26@gmail.com>'
+DEFAULT_FROM_EMAIL = f'CraveCast Security <{EMAIL_HOST_USER}>'
+
+
+# =========================
+# WEATHER
+# =========================
+
+# Fallback only - the Owner's own key (SystemSetting.weather_api_key) is
+# preferred when set. Read server-side only; never sent to the browser.
+OPENWEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY', '')
 
 
 # =========================

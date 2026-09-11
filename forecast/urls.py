@@ -4,5 +4,7 @@ urlpatterns = [
     path('',views.forecast_view, name= 'view-forecast'),
     path('predict-api/', views.get_prediction_api, name='predict-api'),
     path('monthly-api/', views.get_monthly_forecast_api, name='monthly-forecast-api'),
+    path('weather-api/', views.weather_forecast_proxy, name='weather-forecast-proxy'),
+    path('weather-geo-api/', views.weather_geo_reverse_proxy, name='weather-geo-proxy'),
 
 ]

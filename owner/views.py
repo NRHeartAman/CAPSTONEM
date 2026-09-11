@@ -544,7 +544,12 @@ def approve_sales_upload(request, pk):
 # WEATHER HELPER
 # ─────────────────────────────────────────────────────────────
 
-def get_historical_temp(date_str, lat=14.4667, lon=121.1833):
+def get_historical_temp(date_str, lat=None, lon=None):
+    if lat is None or lon is None:
+        config = SystemSetting.objects.first()
+        lat = config.store_lat if config else 14.4667
+        lon = config.store_lon if config else 121.1833
+
     url = (
         f'https://archive-api.open-meteo.com/v1/archive'
         f'?latitude={lat}&longitude={lon}'
@@ -612,7 +617,7 @@ def admin_management_view(request):
                     f'For security, please change your password after your first login.\n\n'
                     f'— CraveCast Team'
                 ),
-                from_email='CraveCast Security <cravecast26@gmail.com>',
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
                 fail_silently=False,
             )
@@ -653,7 +658,7 @@ def admin_management_view(request):
                     f'Here is your activation link:\n{activate_url}\n\n'
                     f'— CraveCast Team'
                 ),
-                from_email='CraveCast Security <cravecast26@gmail.com>',
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[target.email],
                 fail_silently=False,
             )
@@ -752,7 +757,7 @@ def settings_view(request):
             config.store_name      = request.POST.get('store_name')
             config.contact_number  = request.POST.get('contact_number')
             config.stock_threshold = request.POST.get('stock_threshold')
-            config.weather_api_key = request.POST.get('weather_api_key')
+            config.weather_api_key = request.POST.get('weather_api_key', '').strip() or None
             config.forecast_mode   = request.POST.get('forecast_mode')
             config.store_lat       = request.POST.get('store_lat')
             config.store_lon       = request.POST.get('store_lon')
