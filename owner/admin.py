@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import SystemSetting, InventoryRequest, EventRequest, StaffInvite, OwnerEvent
 
-# Register your models here.
+admin.site.register(SystemSetting)
+admin.site.register(InventoryRequest)
+admin.site.register(EventRequest)
+admin.site.register(StaffInvite)
+admin.site.register(OwnerEvent)
