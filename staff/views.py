@@ -11,10 +11,41 @@ from owner.models import OwnerEvent, InventoryRequest, EventRequest
 from inventory.models import Inventory
 from staff.models import PrepTask
 from staff.prep_utils import generate_daily_prep_tasks
+from accounts.models import User
 import json
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+
+
+def _notify_owner_new_request(request, kind, summary):
+    """
+    Alerts every active Owner account by email that a new request is
+    pending, with a direct link to Approvals - the email only makes them
+    aware of it; approving it still requires reaching the running system,
+    same as today.
+    """
+    owner_emails = list(
+        User.objects.filter(role='OWNER', is_active=True)
+        .exclude(email='')
+        .values_list('email', flat=True)
+    )
+    if not owner_emails:
+        return
+
+    approvals_url = request.build_absolute_uri('/owner/approvals/')
+    subject = f"[CraveCast] New {kind} request pending approval"
+    message = (
+        f"Hi Owner,\n\n"
+        f"{request.user.username} just submitted a new {kind.lower()} request:\n\n"
+        f"{summary}\n\n"
+        f"Review it here: {approvals_url}\n\n"
+        f"CraveCast Notifications"
+    )
+    try:
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, owner_emails, fail_silently=False)
+    except Exception:
+        pass
 
 
 # ── DASHBOARD ─────────────────────────────────────────────────────────────────
@@ -177,6 +208,10 @@ def staff_inventory_request_view(request):
                 unit=unit,
                 category=category,
             )
+            _notify_owner_new_request(
+                request, 'Inventory',
+                f'Item: {item_name}\nQuantity: {stock_qty} {unit}\nCategory: {category}'
+            )
             messages.success(request, f'Request for "{item_name}" submitted. Awaiting owner approval. Naipadala na, hintayin ang approval ng owner.')
         else:
             messages.error(request, 'Please fill in all required fields. Kumpletuhin ang lahat ng kailangang field.')
@@ -197,6 +232,10 @@ def staff_event_request_view(request):
                 event_name=event_name,
                 event_date=event_date,
                 description=description,
+            )
+            _notify_owner_new_request(
+                request, 'Event',
+                f'Event: {event_name}\nDate: {event_date}'
             )
             messages.success(request, f'Event request "{event_name}" submitted. Awaiting owner approval. Naipadala na, hintayin ang approval ng owner.')
         else:
