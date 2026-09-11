@@ -1,203 +1,445 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Staff Dashboard - CraveCast{% endblock %}
 
+{% block extra_css %}
+<style>
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 1100px) { .dashboard-layout { grid-template-columns: 1fr; } }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .section-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .section-card-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        color: var(--text);
+    }
+
+    .section-card-header h3 i { color: var(--purple); font-size: 18px; }
+
+    .quick-nav {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 768px) { .quick-nav { grid-template-columns: 1fr; } }
+
+    .quick-nav-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        text-decoration: none;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.2s ease;
+    }
+    .quick-nav-card:hover {
+        border-color: var(--purple);
+        transform: translateY(-2px);
+        background: var(--surface2);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .quick-nav-icon {
+        width: 44px; height: 44px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; flex-shrink: 0;
+    }
+
+    .quick-nav-label { font-size: 14px; font-weight: 700; color: var(--text); }
+    .quick-nav-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .bar-chart-container { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
+    .chart-row { display: flex; flex-direction: column; gap: 6px; }
+    .chart-info { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+    .chart-label { color: var(--text); }
+    .chart-value { color: var(--text-muted); font-size: 12px; }
+    .chart-bar-bg {
+        height: 12px;
+        background: var(--surface2);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+    .chart-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--purple) 0%, var(--red) 100%);
+        border-radius: 6px;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0%;
+    }
+
+    .prep-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .prep-item {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: border-color 0.2s;
+    }
+    .prep-item:hover { border-color: rgba(139, 92, 246, 0.3); }
+
+    .prep-meta { display: flex; align-items: center; gap: 12px; }
+
+    .prep-checkbox {
+        width: 18px; height: 18px;
+        border-radius: 4px;
+        border: 2px solid var(--border);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+        background: var(--surface);
+        flex-shrink: 0;
+    }
+    .prep-checkbox:hover { border-color: var(--purple); }
+
+    .prep-details h4 { font-size: 13px; font-weight: 700; margin: 0 0 2px 0; color: var(--text); }
+    .prep-details p  { font-size: 11px; color: var(--text-muted); margin: 0; }
+
+    .prep-badge {
+        font-size: 11px; font-weight: 700; padding: 4px 10px;
+        border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .prep-high   { background: var(--red-dim);  color: var(--red); }
+    .prep-normal { background: var(--blue-dim); color: var(--blue); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+        background: var(--surface2);
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 20px;
+        text-align: left;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border);
+    }
+    td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<style>
-    /* Status Badges */
-    .status {
-        padding: 5px 12px;
-        font-size: 0.65rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .process { background: #D32F2F; color: #fff; } /* Critical */
-    .pending { background: #000; color: #fff; }    /* Low */
-
-    /* Quick Action Links */
-    .card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
-    /* Table Styling */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    th {
-        text-align: left;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        color: #888;
-        padding: 12px;
-        background: #fcfcfc;
-    }
-    td {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
-        font-size: 0.85rem;
-    }
-
-    /* Chart Box Adjustments */
-    .chart-container {
-        padding: 25px;
-        background: #fff;
-        border: 1px solid #eee;
-        border-top: 4px solid #000;
-        margin-bottom: 20px;
-    }
-</style>
-
-<!-- HEADER -->
-<div class="header">
-    <h1 style="font-weight: 900; font-size: 2.2rem;">Staff Dashboard</h1>
-    <p style="color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Shift Overview & Operational Tracking</p>
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Staff Dashboard</h1>
+        <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 14px;">Real-time inventory logging and shift daily preparation controls</p>
+    </div>
 </div>
 
-<!-- TOP ANALYTICS -->
-<div class="dashboard-analytics" style="margin-top: 20px;">
-
-    <div class="analytics-card">
-        <h3>{{ daily_sold|default:0 }}</h3>
-        <p>Units Sold Today</p>
+<div class="stats-grid">
+    <div class="stat-card teal">
+        <div class="stat-label">Total Items Tracked</div>
+        <div class="stat-value">{{ total_items|default:0|intcomma }}</div>
+        <div class="stat-sub">Inventory records</div>
     </div>
-
-    <div class="analytics-card">
-        <h3>{{ daily_orders|default:0 }}</h3>
-        <p>Total Transactions</p>
+    <div class="stat-card red"
+         {% if low_stock_items %}
+         title="Low stock:&#10;{% for item in low_stock_items %}{{ item.item_name }} — {{ item.stock_qty|floatformat:0 }} {{ item.unit }}&#10;{% endfor %}{% if low_stock_count > 5 %}+{{ low_stock_count|add:"-5" }} more&#10;{% endif %}"
+         {% endif %}>
+        <div class="stat-label">Low Stock Alerts <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
+        <div class="stat-value">{{ low_stock_count|default:0|intcomma }}</div>
+        <div class="stat-sub">Items below critical point</div>
     </div>
-
-    <div class="analytics-card">
-        <h3>₱{{ weekly_sales|floatformat:2 }}</h3>
-        <p>7-Day Revenue</p>
+    <div class="stat-card blue">
+        <div class="stat-label">Ingredients (Stock)</div>
+        <div class="stat-value">{{ ingredient_count|default:0 }}</div>
+        <div class="stat-sub">Active raw materials</div>
     </div>
-
-    <div class="analytics-card" style="border-top-color: #D32F2F;">
-        <h3>{{ low_stock_count|default:0 }}</h3>
-        <p>Low Stock Alerts</p>
+    <div class="stat-card purple">
+        <div class="stat-label">Supplies Storage</div>
+        <div class="stat-value">{{ supply_count|default:0 }}</div>
+        <div class="stat-sub">Packaging items</div>
     </div>
-
 </div>
 
-<!-- SALES CHART -->
-<div class="chart-container">
-    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 20px; font-weight: 800;">
-        <i class='bx bx-line-chart'></i> 7-Day Sales Performance
-    </h3>
-    <canvas id="salesChart" height="100"></canvas>
-</div>
-
-<!-- QUICK ACTIONS (Navigation) -->
-<div class="dashboard-analytics" style="margin-bottom: 20px;">
-
-    <a href="{% url 'view-inventory' %}" class="card-link">
-        <div class="analytics-card">
-            <h3>Inventory</h3>
-            <p>Manage Stock</p>
+<div class="quick-nav">
+    <a href="{% url 'view-inventory' %}" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background: var(--blue-dim); color: var(--blue);">
+            <i class='bx bx-package'></i>
+        </div>
+        <div>
+            <div class="quick-nav-label">Inventory Matrix</div>
+            <div class="quick-nav-sub">Update stock status</div>
         </div>
     </a>
-
-    <a href="{% url 'view-forecast' %}" class="card-link">
-        <div class="analytics-card">
-            <h3>Forecast</h3>
-            <p>Demand Engine</p>
+    <a href="{% url 'view-forecast' %}" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background: var(--purple-dim); color: var(--purple);">
+            <i class='bx bx-analyse'></i>
+        </div>
+        <div>
+            <div class="quick-nav-label">Demand Forecast</div>
+            <div class="quick-nav-sub">Check predictive needs</div>
         </div>
     </a>
-
-    <a href="{% url 'view-events' %}" class="card-link">
-        <div class="analytics-card">
-            <h3>Events</h3>
-            <p>Promos & Schedule</p>
+    <a href="{% url 'view-events' %}" class="quick-nav-card">
+        <div class="quick-nav-icon" style="background: var(--teal-dim); color: var(--teal);">
+            <i class='bx bx-calendar'></i>
+        </div>
+        <div>
+            <div class="quick-nav-label">Local Events</div>
+            <div class="quick-nav-sub">Promos &amp; holiday tracking</div>
         </div>
     </a>
-
 </div>
 
-<!-- LOW STOCK TABLE -->
-<div class="chart-container">
-    <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; margin-bottom: 10px; font-weight: 800;">
-        <i class='bx bx-error-circle'></i> Stock Warnings
-    </h3>
+<div class="dashboard-layout">
 
-    <table>
-        <thead>
-            <tr>
-                <th>Item Name</th>
-                <th>Quantity Left</th>
-                <th>Priority</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for item in low_stock_items %}
-            <tr>
-                <td><strong>{{ item.item_name }}</strong></td>
-                <td>{{ item.stock_qty }} {{ item.unit }}</td>
-                <td>
-                    {% if item.stock_qty <= 5 %}
-                        <span class="status process">Critical</span>
-                    {% else %}
-                        <span class="status pending">Low Stock</span>
-                    {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="3" style="text-align:center; padding:30px; color:#aaa; font-weight: 700; text-transform: uppercase; font-size: 0.7rem;">
-                    All inventory levels are optimal.
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <!-- LEFT: Tables -->
+    <div class="main-workspace-column">
+
+        <div class="section-card" style="padding:0; overflow:hidden;">
+            <div class="section-card-header" style="padding: 18px 24px; margin-bottom: 0;">
+                <h3><i class='bx bx-error-circle' style="color: var(--red);"></i> Critical Stock Warnings</h3>
+                <span class="badge badge-red" style="font-weight: 700;">{{ low_stock_count|default:0 }} Action Required</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Description</th>
+                        <th>Current Stock Volume</th>
+                        <th style="text-align: center;">Priority Dispatch</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in low_stock_items %}
+                    <tr>
+                        <td><strong style="color: var(--text);">{{ item.item_name }}</strong></td>
+                        <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
+                        <td style="text-align: center;">
+                            {% if item.stock_qty <= 5 %}
+                                <span class="badge badge-red" style="font-size: 11px;">Critical Fill</span>
+                            {% else %}
+                                <span class="badge badge-amber" style="font-size: 11px;">Low Stock</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px;">
+                            <i class='bx bx-check-shield' style="font-size: 28px; display: block; margin-bottom: 8px; color: var(--green); opacity: 0.6;"></i>
+                            All raw materials are safely above system thresholds.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-card" style="padding:0; overflow:hidden;">
+            <div class="section-card-header" style="padding: 18px 24px; margin-bottom: 0;">
+                <h3><i class='bx bx-package'></i> Stock Registry Status</h3>
+                <a href="{% url 'view-inventory' %}" class="btn btn-ghost" style="padding: 6px 12px; font-size:12px; font-weight: 600;">
+                    View Master Board <i class='bx bx-arrow-right' style="margin-left: 4px;"></i>
+                </a>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Description</th>
+                        <th>Category Group</th>
+                        <th>Current Volume</th>
+                        <th style="text-align: center;">Condition State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory %}
+                    <tr>
+                        <td><strong style="color: var(--text);">{{ item.item_name }}</strong></td>
+                        <td>
+                            {% if item.category == 'Stock' %}
+                                <span class="badge badge-teal" style="font-size: 11px; font-weight: 600;">Ingredient</span>
+                            {% else %}
+                                <span class="badge badge-blue" style="font-size: 11px; font-weight: 600;">Supply</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
+                        <td style="text-align: center;">
+                            {% if item.stock_qty <= item.restock_threshold %}
+                                <span class="badge badge-red" style="font-size: 11px;">Restock Now</span>
+                            {% else %}
+                                <span class="badge badge-green" style="font-size: 11px;">Stable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px;">
+                            No logged inventory elements detected in local node.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- RIGHT: Charts + Prep Guide -->
+    <div class="side-workspace-column">
+
+        <div class="section-card">
+            <div class="section-card-header">
+                <h3><i class='bx bx-bar-chart-alt-2'></i> Best-Selling Variants</h3>
+                <span class="badge badge-purple" style="font-size: 11px;">Top Items</span>
+            </div>
+            <div class="bar-chart-container">
+                {% for item in best_sellers %}
+                <div class="chart-row">
+                    <div class="chart-info">
+                        <span class="chart-label">{{ item.name }}</span>
+                        <span class="chart-value">{{ item.qty }} Units Sold This Month</span>
+                    </div>
+                    <div class="chart-bar-bg">
+                        <div class="chart-bar-fill" style="width: {{ item.percentage }}%;"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">
+                    No metrics compiled. Upload core data arrays to populate chart paths.
+                </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- OPERATIONAL DAILY PREP GUIDE MODULE -->
+        <div class="section-card">
+            <div class="section-card-header">
+                <h3><i class='bx bx-notepad'></i> Shift Daily Prep Guide</h3>
+                <span class="badge badge-blue" style="font-size: 11px;" id="prep-counter">
+                    {{ prep_done_count }}/{{ prep_total_count }} Done
+                </span>
+            </div>
+
+            {% if prep_tasks %}
+            <div class="prep-list" id="prepList">
+                {% for task in prep_tasks %}
+                <div class="prep-item" id="prep-item-{{ task.pk }}"
+                     style="{% if task.is_done %}opacity:0.5;{% endif %}">
+                    <div class="prep-meta">
+                        <div class="prep-checkbox"
+                             onclick="togglePrepTask(this, {{ task.pk }})"
+                             style="border-color:{% if task.is_done %}var(--purple){% else %}var(--border){% endif %};">
+                            {% if task.is_done %}
+                                <i class='bx bx-check' style='color:var(--purple);font-size:14px;font-weight:bold;'></i>
+                            {% endif %}
+                        </div>
+                        <div class="prep-details">
+                            <h4 style="{% if task.is_done %}text-decoration:line-through;color:var(--text-muted);{% endif %}">
+                                {{ task.title }}
+                            </h4>
+                            <p>{{ task.instructions }}</p>
+                            {% if task.source != 'manual' %}
+                            <span style="font-size:10px;color:var(--text-muted);font-style:italic;margin-top:3px;display:block;">
+                                {% if task.source == 'low_stock' %}
+                                    <i class='bx bx-error-circle' style="font-size:10px;color:var(--red);"></i>
+                                    Auto: Low stock — {{ task.linked_item }}
+                                {% elif task.source == 'best_seller' %}
+                                    <i class='bx bx-bar-chart-alt-2' style="font-size:10px;color:var(--purple);"></i>
+                                    Auto: Top seller
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="prep-badge {% if task.priority == 'high' %}prep-high{% else %}prep-normal{% endif %}">
+                        {{ task.get_priority_display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px;">
+                <i class='bx bx-check-circle' style="font-size:24px;display:block;margin-bottom:8px;color:var(--green);"></i>
+                No prep tasks for today.
+            </p>
+            {% endif %}
+        </div>
+
+    </div>
+
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('salesChart');
-    if (ctx) {
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ chart_labels|safe }},
-                datasets: [{
-                    label: 'Daily Revenue (₱)',
-                    data: {{ chart_values|safe }},
-                    borderColor: '#000',
-                    backgroundColor: 'rgba(0,0,0,0.05)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#000'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { 
-                        grid: { display: false },
-                        ticks: { font: { weight: 'bold', size: 10 } }
-                    },
-                    y: { 
-                        beginAtZero: true,
-                        ticks: { font: { weight: 'bold', size: 10 } }
-                    }
-                }
-            }
-        });
+    const TOGGLE_URL = "{% url 'toggle-prep-task' pk=0 %}".replace('/0/', '/');
+    const CSRF = "{{ csrf_token }}";
+
+    function togglePrepTask(el, pk) {
+        fetch(TOGGLE_URL + pk + '/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const row   = document.getElementById('prep-item-' + pk);
+            const title = row.querySelector('.prep-details h4');
+            el.innerHTML = data.is_done
+                ? "<i class='bx bx-check' style='color:var(--purple);font-size:14px;font-weight:bold;'></i>"
+                : "";
+            el.style.borderColor       = data.is_done ? 'var(--purple)' : 'var(--border)';
+            row.style.opacity          = data.is_done ? '0.5' : '1';
+            title.style.textDecoration = data.is_done ? 'line-through' : 'none';
+            title.style.color          = data.is_done ? 'var(--text-muted)' : 'var(--text)';
+            updateCounter();
+        })
+        .catch(err => console.error('Prep toggle error:', err));
+    }
+
+    function updateCounter() {
+        const items = document.querySelectorAll('#prepList .prep-item');
+        const done  = [...items].filter(el => el.style.opacity === '0.5').length;
+        const counter = document.getElementById('prep-counter');
+        if (counter) counter.textContent = done + '/' + items.length + ' Done';
     }
 </script>
 {% endblock %}

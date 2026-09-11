@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Approvals - CraveCast{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Staff Requests</h1>
+        <p>Review and approve inventory & event submissions from staff</p>
+    </div>
+</div>
+<!-- PENDING INVENTORY REQUESTS -->
+<div class="table-card" style="margin-bottom: 24px;">
+    <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Pending Inventory Requests</h3>
+        <span class="badge badge-amber">{{ pending_inventory.count }} pending</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Requested By</th>
+                <th>Item Name</th>
+                <th>Qty</th>
+                <th>Total Stock</th>
+                <th>Unit</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th style="text-align:center;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in pending_inventory %}
+            <tr>
+                <td><span class="badge badge-purple">{{ req.requested_by.username }}</span></td>
+                <td><strong>{{ req.item_name }}</strong></td>
+                <td>{{ req.stock_qty }}</td>
+                <td>{{ req.total_stock }}</td>
+                <td>{{ req.unit }}</td>
+                <td><span class="badge badge-blue">{{ req.category }}</span></td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="text-align:center;">
+                    <form method="POST" action="{% url 'approve-inventory-request' req.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ Approve</button>
+                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No pending inventory requests.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PENDING EVENT REQUESTS -->
+<div class="table-card" style="margin-bottom: 24px;">
+    <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Pending Event Requests</h3>
+        <span class="badge badge-amber">{{ pending_events.count }} pending</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Requested By</th>
+                <th>Event Name</th>
+                <th>Event Date</th>
+                <th>Description</th>
+                <th>Submitted</th>
+                <th style="text-align:center;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in pending_events %}
+            <tr>
+                <td><span class="badge badge-purple">{{ req.requested_by.username }}</span></td>
+                <td><strong>{{ req.event_name }}</strong></td>
+                <td style="color:var(--text-muted);">{{ req.event_date }}</td>
+                <td style="font-size:13px;color:var(--text-muted);">{{ req.description|default:"—" }}</td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="text-align:center;">
+                    <form method="POST" action="{% url 'approve-event-request' req.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ Approve</button>
+                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No pending event requests.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- HISTORY -->
+<div class="table-card">
+    <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);">
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Recent Decisions</h3>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Item / Event</th>
+                <th>Requested By</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in all_inventory %}
+            <tr>
+                <td><span class="badge badge-blue">Inventory</span></td>
+                <td><strong>{{ req.item_name }}</strong></td>
+                <td>{{ req.requested_by.username }}</td>
+                <td>
+                    {% if req.status == 'approved' %}<span class="badge badge-green">Approved</span>
+                    {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+                </td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+            {% for req in all_events %}
+            <tr>
+                <td><span class="badge badge-teal">Event</span></td>
+                <td><strong>{{ req.event_name }}</strong></td>
+                <td>{{ req.requested_by.username }}</td>
+                <td>
+                    {% if req.status == 'approved' %}<span class="badge badge-green">Approved</span>
+                    {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+                </td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+            {% if not all_inventory and not all_events %}
+            <tr>
+                <td colspan="5" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No decisions made yet.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

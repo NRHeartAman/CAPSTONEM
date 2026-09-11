@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraveCast - Security Hold</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --surface: #111827;
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --amber: #f59e0b;
+            --amber-dim: rgba(245, 158, 11, 0.1);
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        i.lock-icon {
+            font-size: 56px;
+            color: var(--amber);
+            background: var(--amber-dim);
+            padding: 20px;
+            border-radius: 50%;
+            margin-bottom: 24px;
+            display: inline-block;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+        }
+        p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+        }
+        .email-notice {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .email-notice strong {
+            color: var(--text);
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 24px;
+            color: var(--amber);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .btn-back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <i class='bx bx-time-five lock-icon'></i>
+    <h1>Account Awaiting Approval</h1>
+    <p>Hi <strong>{{ staff_username }}</strong>, your staff account is successfully created but requires activation. An access request notification has just been sent to the Owner's inbox for security verification.</p>
+    
+    <div class="email-notice">
+        <i class='bx bx-mail-send'></i> Approval notification dispatched to <strong>cravecast26@gmail.com</strong>
+    </div>
+
+    <a href="/login/" class="btn-back"><i class='bx bx-arrow-back'></i> Return to Login</a>
+</div>
+
+</body>
+</html>

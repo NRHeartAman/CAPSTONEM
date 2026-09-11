@@ -3,13 +3,8 @@
 
 {% block title %}CraveCast - Demand Forecast{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <style>
-    :root {
-        --brand-black: #000;
-        --brand-blue: #2B4560;
-    }
-
     .forecast-grid {
         display: grid;
         grid-template-columns: 1.4fr 1fr;
@@ -17,231 +12,191 @@
         margin-top: 24px;
     }
 
-    .panel {
-        background: #fff;
-        border: 1px solid #eee;
-        border-top: 3px solid #000;
-        padding: 24px;
+    /* Compact inline weather row (replaces 3 boxed signal cards) */
+    .signal-row {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap;
     }
 
+    .signal-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .signal-item .signal-icon { font-size: 18px; }
+
+    .signal-item.is-active .signal-value { color: var(--red); }
+
+    .signal-value {
+        font-family: 'Syne', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .signal-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--text-muted);
+    }
+
+    /* Panel */
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px;
+    }
+
+    .panel + .panel { margin-top: 16px; }
+
     .panel-label {
-        font-size: 0.65rem;
-        font-weight: 800;
+        font-size: 10px;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1.5px;
-        color: #aaa;
+        color: var(--text-muted);
         margin-bottom: 16px;
     }
 
-    /* Weather signal row */
-    .signal-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin-bottom: 24px;
-    }
-
-    .signal-card {
-        background: #f5f5f5;
-        padding: 16px;
-        text-align: center;
-    }
-
-    .signal-card .signal-icon {
-        font-size: 1.4rem;
-        margin-bottom: 6px;
-    }
-
-    .signal-card .signal-value {
-        font-size: 1.4rem;
-        font-weight: 900;
-        letter-spacing: -1px;
-        color: #000;
-    }
-
-    .signal-card .signal-label {
-        font-size: 0.6rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #aaa;
-        margin-top: 4px;
-    }
-
-    .signal-card.active-signal {
-        background: #000;
-    }
-    .signal-card.active-signal .signal-value,
-    .signal-card.active-signal .signal-label {
-        color: #fff;
-    }
-
-    /* Condition badge */
-    .condition-badge {
-        display: inline-block;
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 5px 12px;
-        background: #f0f0f0;
-        margin-bottom: 20px;
-    }
-
-    /* Prediction section */
+    /* Prediction */
     .prediction-number {
-        font-size: 5rem;
-        font-weight: 900;
-        letter-spacing: -4px;
+        font-family: 'Syne', sans-serif;
+        font-size: 56px;
+        font-weight: 800;
+        letter-spacing: -3px;
         line-height: 1;
-        color: #000;
-        margin: 8px 0;
+        color: var(--red);
+        margin: 4px 0 2px;
     }
 
     .prediction-unit {
-        font-size: 0.75rem;
-        font-weight: 800;
+        font-size: 12px;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #aaa;
+        color: var(--text-muted);
     }
 
     .prediction-reason {
-        font-size: 0.82rem;
-        color: #666;
+        font-size: 13px;
+        color: var(--text-muted);
         line-height: 1.7;
         font-style: italic;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #eee;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
     }
 
-    /* Per-product breakdown */
+    /* Accuracy row — compact single line instead of a boxed callout */
+    .accuracy-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .accuracy-score {
+        font-family: 'Syne', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--purple);
+    }
+
+    /* Model inputs — small caption line, not a separate panel */
+    .model-inputs-line {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 12px;
+    }
+    .model-inputs-line strong { color: var(--text-muted); font-weight: 600; }
+
+    /* Product rows */
     .product-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
     }
-
     .product-row:last-child { border-bottom: none; }
 
     .product-name {
-        font-size: 0.8rem;
-        font-weight: 800;
+        font-size: 12px;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        color: var(--text);
+        min-width: 80px;
     }
 
     .product-bar-wrap {
         flex: 1;
-        margin: 0 16px;
+        margin: 0 14px;
         height: 6px;
-        background: #f0f0f0;
+        background: var(--surface3);
+        border-radius: 3px;
+        overflow: hidden;
     }
 
     .product-bar {
         height: 100%;
-        background: #000;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--red), var(--purple));
         transition: width 0.6s ease;
     }
 
     .product-qty {
-        font-size: 1rem;
-        font-weight: 900;
-        min-width: 40px;
+        font-family: 'Syne', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        min-width: 36px;
         text-align: right;
+        color: var(--text);
     }
 
-    .product-trend {
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 3px 8px;
-        margin-left: 10px;
-        text-transform: uppercase;
-    }
-
-    .trend-up { background: #000; color: #fff; }
-    .trend-down { background: #f0f0f0; color: #999; }
-
-    /* Accuracy badge */
-    .accuracy-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 20px;
-        padding: 14px;
-        background: #f9f9f9;
-        border-left: 3px solid #000;
-    }
-
-    .accuracy-score {
-        font-size: 1.6rem;
-        font-weight: 900;
-        letter-spacing: -1px;
-    }
-
-    .accuracy-label {
-        font-size: 0.65rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #888;
-    }
+    .trend-up   { background: var(--green-dim); color: var(--green); }
+    .trend-down { background: var(--red-dim);   color: var(--red); }
 
     /* Search */
-    .search-row {
-        display: flex;
-        gap: 10px;
-        margin: 20px 0 0;
-    }
+    .search-row { display: flex; gap: 8px; }
 
-    input#city_input {
+    .search-row input {
         flex: 1;
-        padding: 13px 16px;
-        border: 1px solid #ddd;
-        font-size: 0.9rem;
-        font-family: inherit;
-        border-radius: 0;
+        padding: 10px 14px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        transition: border-color 0.2s;
     }
-
-    input#city_input:focus { outline: none; border-color: #000; }
-
-    .btn-black {
-        background: #000;
-        color: #fff;
-        border: 1px solid #000;
-        padding: 13px 20px;
-        cursor: pointer;
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: 0.15s;
-    }
-
-    .btn-black:hover { background: #fff; color: #000; }
-    .btn-gps { background: #555; border-color: #555; }
-    .btn-gps:hover { background: #fff; color: #555; }
+    .search-row input:focus { outline: none; border-color: var(--red); }
 
     /* Location pill */
     .location-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 0.65rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #888;
-        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
     }
 
     .location-dot {
-        width: 6px;
-        height: 6px;
-        background: #000;
+        width: 6px; height: 6px;
+        background: var(--green);
         border-radius: 50%;
         animation: pulse 2s infinite;
     }
@@ -251,131 +206,291 @@
         50% { opacity: 0.3; }
     }
 
-    /* No data state */
+    /* No data */
     .no-data-state {
         text-align: center;
-        padding: 30px 20px;
-        color: #bbb;
+        padding: 32px 20px;
+        color: var(--text-dim);
+    }
+    .no-data-state p { font-size: 12px; margin-top: 8px; }
+
+    /* Section header */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
     }
 
-    .no-data-state p {
-        font-size: 0.75rem;
+    .section-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .section-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-muted);
+    }
+
+    /* Monthly — one panel: bars + a compact stat strip underneath */
+    .month-section { margin-top: 28px; margin-bottom: 40px; }
+
+    .month-bars {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
+        height: 190px;
+        margin-top: 20px;
+        padding: 0 4px;
+        background-image: repeating-linear-gradient(
+            to top,
+            var(--border) 0,
+            var(--border) 1px,
+            transparent 1px,
+            transparent 25%
+        );
+        background-position: bottom;
+    }
+
+    .month-bar-col {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .month-bar-peak-badge {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--purple);
+        background: var(--purple-dim);
+        padding: 2px 7px;
+        border-radius: 6px;
+        margin-bottom: 2px;
+    }
+
+    .month-bar {
+        width: 60%;
+        max-width: 46px;
+        height: 0%;
+        background: var(--surface3);
+        border-radius: 8px 8px 3px 3px;
+        transition: height 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.15s ease, filter 0.15s ease;
+        cursor: default;
+    }
+
+    .month-bar:hover { transform: scaleX(1.08); filter: brightness(1.15); }
+
+    .month-bar.is-current-week { background: linear-gradient(180deg, var(--red), var(--purple)); }
+    .month-bar.is-past { background: var(--surface2); border: 1px solid var(--border-hover, var(--border)); }
+    .month-bar.is-future { background: linear-gradient(180deg, rgba(139,92,246,0.35), rgba(139,92,246,0.12)); }
+
+    .month-bar-label { font-size: 10px; font-weight: 600; color: var(--text-dim); }
+    .month-bar-val   {
+        font-size: 12px;
         font-weight: 800;
+        font-family: 'Syne', sans-serif;
+        color: var(--text);
+        background: var(--surface2);
+        padding: 2px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+    }
+    .month-bar-col.is-current-week .month-bar-val { color: var(--red); border-color: rgba(255,61,90,0.3); }
+
+    .month-stat-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .month-stat {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: var(--surface2);
+    }
+
+    .month-stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
+        background: var(--surface3);
+    }
+
+    .month-stat .stat-label {
+        font-size: 10px;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-top: 8px;
+        color: var(--text-muted);
+        margin: 0 0 2px;
     }
 
-    @media (max-width: 768px) {
+    .month-stat .stat-value {
+        font-family: 'Syne', sans-serif;
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: var(--text);
+        line-height: 1.15;
+    }
+
+    .month-stat.accent-stat {
+        background: linear-gradient(135deg, var(--red-dim), var(--purple-dim));
+        border: 1px solid rgba(139,92,246,0.25);
+    }
+    .month-stat.accent-stat .month-stat-icon { background: rgba(255,255,255,0.08); }
+    .month-stat.accent-stat .stat-value { color: var(--purple); }
+
+    .month-peak-range { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    @media (max-width: 700px) {
+        .month-stat-strip { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
         .forecast-grid { grid-template-columns: 1fr; }
-        .signal-row { grid-template-columns: repeat(3, 1fr); }
-        .prediction-number { font-size: 3.5rem; }
     }
 </style>
+{% endblock %}
+
+{% block content %}
 
 <!-- PAGE HEADER -->
-<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+<div class="page-header">
     <div>
-        <h1 style="font-weight:900; font-size:2rem; margin:0; letter-spacing:-1px;">Demand Forecast</h1>
+        <h1>Demand Forecast</h1>
         <div class="location-pill">
             <div class="location-dot"></div>
-            <span>Tracking: <strong id="locationLabel" style="color:#000;">Binangonan, PH</strong></span>
+            <span>Tracking: <strong id="locationLabel" style="color: var(--text);">Binangonan, PH</strong></span>
         </div>
     </div>
-    <div class="search-row" style="margin:0;">
+    <div class="search-row">
         <input type="text" id="city_input" placeholder="Enter city name...">
-        <button class="btn-black" id="searchBtn">Search</button>
-        <button class="btn-black btn-gps" id="locationBtn">
-            <i class='bx bx-target-lock'></i> GPS
-        </button>
+        <button class="btn btn-primary" id="searchBtn"><i class='bx bx-search'></i> Search</button>
+        <button class="btn btn-ghost" id="locationBtn"><i class='bx bx-target-lock'></i> GPS</button>
     </div>
 </div>
 
-<!-- MAIN GRID -->
+<!-- TODAY — MAIN GRID -->
 <div class="forecast-grid">
 
-    <!-- LEFT: WEATHER SIGNALS + PREDICTION -->
+    <!-- LEFT: weather + prediction, merged into one panel -->
     <div>
-        <!-- 3 SIGNAL CARDS: Only what matters -->
-        <div class="panel" style="border-top-color:#000;">
-            <p class="panel-label">Live Weather Signals</p>
-
+        <div class="panel">
             <div class="signal-row">
-                <div class="signal-card" id="tempCard">
-                    <div class="signal-icon">🌡</div>
-                    <div class="signal-value" id="currentTemp">--</div>
-                    <div class="signal-label">Temperature</div>
+                <div class="signal-item" id="tempCard">
+                    <span class="signal-icon">🌡</span>
+                    <div>
+                        <div class="signal-value" id="currentTemp">--</div>
+                        <div class="signal-label">Temp</div>
+                    </div>
                 </div>
-                <div class="signal-card" id="humidCard">
-                    <div class="signal-icon">💧</div>
-                    <div class="signal-value" id="humidityVal">--%</div>
-                    <div class="signal-label">Humidity</div>
+                <div class="signal-item" id="humidCard">
+                    <span class="signal-icon">💧</span>
+                    <div>
+                        <div class="signal-value" id="humidityVal">--%</div>
+                        <div class="signal-label">Humidity</div>
+                    </div>
                 </div>
-                <div class="signal-card" id="condCard">
-                    <div class="signal-icon" id="condIcon">☁</div>
-                    <div class="signal-value" id="condVal" style="font-size:0.75rem; letter-spacing:0;">--</div>
-                    <div class="signal-label">Condition</div>
+                <div class="signal-item" id="condCard">
+                    <span class="signal-icon" id="condIcon">☁</span>
+                    <div>
+                        <div class="signal-value" id="condVal" style="font-size: 12px;">--</div>
+                        <div class="signal-label">Condition</div>
+                    </div>
                 </div>
             </div>
 
-            <p style="font-size:0.7rem; color:#aaa; text-align:center;">
-                These 3 signals feed directly into the prediction model
-            </p>
-        </div>
-
-        <!-- PREDICTION OUTPUT -->
-        <div class="panel" style="margin-top:16px;">
-            <p class="panel-label">Linear Regression Output</p>
-
+            <p class="panel-label" style="margin-bottom: 4px;">Predicted demand today</p>
             <div id="predictionVal" class="prediction-number">--</div>
             <div class="prediction-unit">Total units predicted today</div>
-
             <p id="predictionReason" class="prediction-reason">
                 Waiting for weather data to run prediction...
             </p>
-
-            <!-- Model accuracy -->
-            <div class="accuracy-row" id="accuracyRow" style="display:none;">
-                <div>
-                    <div class="accuracy-score" id="accuracyScore">--%</div>
-                    <div class="accuracy-label">Model Accuracy (R²)</div>
-                </div>
-                <div style="font-size:0.7rem; color:#888; line-height:1.6;">
-                    Based on <strong id="rowCount">--</strong> historical records.
-                    Higher R² = more reliable prediction.
-                </div>
+            <div class="accuracy-row" id="accuracyRow" style="display: none;">
+                <span class="accuracy-score" id="accuracyScore">--%</span>
+                <span>model accuracy · based on <strong id="rowCount">--</strong> historical records</span>
             </div>
+            <p class="model-inputs-line">
+                Inputs used: <strong id="inputTemp">--</strong> ·
+                <strong id="inputHumid">--</strong> humidity ·
+                <strong id="inputDay">--</strong>
+            </p>
         </div>
     </div>
 
-    <!-- RIGHT: PER-PRODUCT BREAKDOWN -->
+    <!-- RIGHT: per-product forecast only -->
     <div>
-        <div class="panel" style="height:fit-content;">
+        <div class="panel">
             <p class="panel-label">Per-Product Forecast</p>
-
             <div id="productBreakdown">
                 <div class="no-data-state">
-                    <div style="font-size:2rem;">📊</div>
+                    <div style="font-size: 32px;">📊</div>
                     <p>Upload sales data to see<br>per-product breakdown</p>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- What the model considers -->
-        <div class="panel" style="margin-top:16px; border-top-color:#555;">
-            <p class="panel-label">Model Inputs</p>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
-                    <span style="color:#555;">Temperature (°C)</span>
-                    <strong id="inputTemp">--</strong>
+<!-- MONTHLY OVERVIEW -->
+<div class="month-section">
+    <div class="section-header">
+        <span class="section-title">Monthly Demand Overview</span>
+        <span class="section-badge" id="monthLabel">Loading…</span>
+    </div>
+    <div class="panel">
+        <p class="panel-label" style="margin-bottom: 4px;">Projected Units by Week</p>
+        <p style="font-size: 12px; color: var(--text-dim); margin: 0;">Estimated demand split across 4 weeks</p>
+        <div class="month-bars" id="monthBars"></div>
+
+        <div class="month-stat-strip">
+            <div class="month-stat accent-stat">
+                <div class="month-stat-icon">📦</div>
+                <div>
+                    <div class="stat-label">Monthly total</div>
+                    <div class="stat-value" id="monthTotal">--</div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
-                    <span style="color:#555;">Humidity (%)</span>
-                    <strong id="inputHumid">--</strong>
+            </div>
+            <div class="month-stat">
+                <div class="month-stat-icon">📊</div>
+                <div>
+                    <div class="stat-label">Avg / day</div>
+                    <div class="stat-value" id="monthAvgDay">--</div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
-                    <span style="color:#555;">Day of Week</span>
-                    <strong id="inputDay">--</strong>
+            </div>
+            <div class="month-stat">
+                <div class="month-stat-icon">🏆</div>
+                <div>
+                    <div class="stat-label">Peak week</div>
+                    <div class="stat-value" id="monthPeakWeek">--</div>
+                    <div class="month-peak-range" id="monthPeakRange">--</div>
                 </div>
             </div>
         </div>
@@ -388,35 +503,30 @@
 <script>
     const API_KEY = "317203ed9c8ce2df206a3b5451c60bce";
 
-    const cityInput     = document.querySelector("#city_input");
-    const searchBtn     = document.querySelector("#searchBtn");
-    const locationBtn   = document.querySelector("#locationBtn");
-    const locationLabel = document.querySelector("#locationLabel");
-    const currentTemp   = document.querySelector("#currentTemp");
-    const humidityVal   = document.querySelector("#humidityVal");
-    const condVal       = document.querySelector("#condVal");
-    const condIcon      = document.querySelector("#condIcon");
-    const predictionVal = document.querySelector("#predictionVal");
+    const cityInput        = document.querySelector("#city_input");
+    const searchBtn        = document.querySelector("#searchBtn");
+    const locationBtn      = document.querySelector("#locationBtn");
+    const locationLabel    = document.querySelector("#locationLabel");
+    const currentTemp      = document.querySelector("#currentTemp");
+    const humidityVal      = document.querySelector("#humidityVal");
+    const condVal          = document.querySelector("#condVal");
+    const condIcon         = document.querySelector("#condIcon");
+    const predictionVal    = document.querySelector("#predictionVal");
     const predictionReason = document.querySelector("#predictionReason");
     const productBreakdown = document.querySelector("#productBreakdown");
-    const accuracyRow   = document.querySelector("#accuracyRow");
-    const accuracyScore = document.querySelector("#accuracyScore");
-    const rowCount      = document.querySelector("#rowCount");
-    const inputTemp     = document.querySelector("#inputTemp");
-    const inputHumid    = document.querySelector("#inputHumid");
-    const inputDay      = document.querySelector("#inputDay");
+    const accuracyRow      = document.querySelector("#accuracyRow");
+    const accuracyScore    = document.querySelector("#accuracyScore");
+    const rowCount         = document.querySelector("#rowCount");
+    const inputTemp        = document.querySelector("#inputTemp");
+    const inputHumid       = document.querySelector("#inputHumid");
+    const inputDay         = document.querySelector("#inputDay");
 
-    const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const CONDITION_ICONS = {
-        "clear": "☀",
-        "cloud": "☁",
-        "rain": "🌧",
-        "drizzle": "🌦",
-        "thunder": "⛈",
-        "snow": "❄",
-        "mist": "🌫",
-        "fog": "🌫",
+        "clear":"☀","cloud":"☁","rain":"🌧","drizzle":"🌦",
+        "thunder":"⛈","snow":"❄","mist":"🌫","fog":"🌫",
     };
 
     function getConditionIcon(description) {
@@ -427,12 +537,94 @@
         return "🌤";
     }
 
+    function estimateDemand(tempC, humidityPct, dayIndex) {
+        const base        = 80;
+        const tempFactor  = (tempC - 28) * 2.5;
+        const humidFactor = (humidityPct - 70) * 0.4;
+        const dayFactors  = [0.85, 1.0, 1.0, 1.05, 1.1, 1.25, 1.2];
+        return Math.max(10, Math.round((base + tempFactor + humidFactor) * dayFactors[dayIndex]));
+    }
+
+    function buildDailyData(forecastList) {
+        const dayMap = {};
+        forecastList.forEach(item => {
+            const date = new Date(item.dt * 1000);
+            const key  = date.toDateString();
+            if (!dayMap[key]) dayMap[key] = { date, temps: [], humids: [] };
+            dayMap[key].temps.push(item.main.temp);
+            dayMap[key].humids.push(item.main.humidity);
+        });
+
+        return Object.values(dayMap).slice(1).map(d => {
+            const avgTemp  = Math.round(d.temps.reduce((a,b) => a+b, 0) / d.temps.length);
+            const avgHumid = Math.round(d.humids.reduce((a,b) => a+b, 0) / d.humids.length);
+            return { date: d.date, temp: avgTemp, humid: avgHumid, demand: estimateDemand(avgTemp, avgHumid, d.date.getDay()) };
+        });
+    }
+
+    function renderMonthly(days) {
+        const now         = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        document.getElementById("monthLabel").textContent = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+
+        const avgDailyDemand = days.reduce((sum, d) => sum + d.demand, 0) / days.length;
+        const monthlyTotal   = Math.round(avgDailyDemand * daysInMonth);
+        const avgPerDay      = Math.round(avgDailyDemand);
+
+        const weekFactors  = [0.93, 1.0, 1.07, 1.0];
+        const weekTotals   = weekFactors.map(f => Math.round(avgDailyDemand * 7 * f));
+        const peakWeekIdx  = weekTotals.indexOf(Math.max(...weekTotals));
+        const maxWeekTotal = Math.max(...weekTotals);
+
+        document.getElementById("monthTotal").textContent    = monthlyTotal.toLocaleString();
+        document.getElementById("monthAvgDay").textContent   = avgPerDay;
+        document.getElementById("monthPeakWeek").textContent = `Week ${peakWeekIdx + 1}`;
+
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const peakStart    = new Date(startOfMonth);
+        peakStart.setDate(1 + peakWeekIdx * 7);
+        const peakEnd = new Date(peakStart);
+        peakEnd.setDate(peakStart.getDate() + 6);
+        document.getElementById("monthPeakRange").textContent =
+            `${peakStart.getDate()} – ${Math.min(peakEnd.getDate(), daysInMonth)} ${MONTHS[now.getMonth()]}`;
+
+        const WEEK_LABELS = ["Week 1","Week 2","Week 3","Week 4"];
+        const currentWeek = Math.floor((now.getDate() - 1) / 7);
+
+        const barsEl = document.getElementById("monthBars");
+        barsEl.innerHTML = weekTotals.map((total, i) => {
+            const heightPct = Math.round((total / maxWeekTotal) * 100);
+            const isPast    = i < currentWeek;
+            const isCurr    = i === currentWeek;
+            const isFuture  = i > currentWeek;
+            const colCls    = isCurr ? "is-current-week" : "";
+            const barCls    = isCurr ? "is-current-week" : isPast ? "is-past" : isFuture ? "is-future" : "";
+            const isPeak    = i === peakWeekIdx;
+            return `
+            <div class="month-bar-col ${colCls}">
+                ${isPeak ? '<div class="month-bar-peak-badge">Peak</div>' : ''}
+                <div class="month-bar-val">${total}</div>
+                <div class="month-bar ${barCls}" data-target-height="${heightPct}" title="${WEEK_LABELS[i]}: ${total} units"></div>
+                <div class="month-bar-label">${WEEK_LABELS[i]}</div>
+            </div>`;
+        }).join("");
+
+        // Grow-in animation: start at 0%, then animate to target height on next frame
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                barsEl.querySelectorAll(".month-bar").forEach(bar => {
+                    bar.style.height = bar.getAttribute("data-target-height") + "%";
+                });
+            });
+        });
+    }
+
     async function getWeatherAndForecast(cityName) {
         if (!API_KEY) return;
         const URL = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&units=metric&appid=${API_KEY}`;
         try {
             const response = await fetch(URL);
-            const data = await response.json();
+            const data     = await response.json();
             if (data.cod !== "200") {
                 predictionReason.textContent = "Location not found. Try another city.";
                 return;
@@ -441,6 +633,8 @@
             const temp     = Math.round(data.list[0].main.temp);
             const humidity = data.list[0].main.humidity;
             fetchMLPrediction(temp, humidity);
+            const dailyData = buildDailyData(data.list);
+            renderMonthly(dailyData);
         } catch (error) {
             predictionReason.textContent = "Connection error. Check your network.";
         }
@@ -459,15 +653,12 @@
         condVal.textContent       = desc;
         condIcon.textContent      = getConditionIcon(desc);
 
-        // Highlight the dominant signal
-        document.getElementById("tempCard").classList.remove("active-signal");
-        document.getElementById("humidCard").classList.remove("active-signal");
-        document.getElementById("condCard").classList.remove("active-signal");
+        ["tempCard","humidCard","condCard"].forEach(id =>
+            document.getElementById(id).classList.remove("is-active"));
 
-        if (temp > 32) document.getElementById("tempCard").classList.add("active-signal");
-        else if (humid > 75) document.getElementById("humidCard").classList.add("active-signal");
+        if (temp > 32) document.getElementById("tempCard").classList.add("is-active");
+        else if (humid > 75) document.getElementById("humidCard").classList.add("is-active");
 
-        // Update model inputs panel
         inputTemp.textContent  = `${temp}°C`;
         inputHumid.textContent = `${humid}%`;
         inputDay.textContent   = DAYS[new Date().getDay()];
@@ -479,21 +670,18 @@
             const response = await fetch(`/forecast/predict-api/?temp=${temperature}&humidity=${humidity}`);
             const result   = await response.json();
 
-            predictionVal.textContent   = result.prediction !== "Need Data" ? result.prediction : "--";
+            predictionVal.textContent    = result.prediction !== "Need Data" ? result.prediction : "--";
             predictionReason.textContent = result.reason;
 
-            // Show accuracy if available
             if (result.accuracy !== undefined) {
                 accuracyScore.textContent = `${Math.round(result.accuracy * 100)}%`;
                 rowCount.textContent      = result.row_count || "--";
                 accuracyRow.style.display = "flex";
             }
 
-            // Per-product breakdown
             if (result.products && result.products.length > 0) {
                 renderProductBreakdown(result.products);
             }
-
         } catch (err) {
             predictionVal.textContent    = "--";
             predictionReason.textContent = "Upload historical sales data to enable the ML Engine.";
@@ -503,28 +691,27 @@
     function renderProductBreakdown(products) {
         const maxQty = Math.max(...products.map(p => p.qty));
         productBreakdown.innerHTML = products.map(p => {
-            const barWidth = Math.round((p.qty / maxQty) * 100);
-            const trendClass = p.trend === "up" ? "trend-up" : "trend-down";
+            const barWidth   = Math.round((p.qty / maxQty) * 100);
+            const trendClass = p.trend === "up" ? "trend-up badge" : "trend-down badge";
             const trendLabel = p.trend === "up" ? "↑ High" : "↓ Low";
             return `
-                <div class="product-row">
-                    <span class="product-name" style="min-width:90px;">${p.name}</span>
-                    <div class="product-bar-wrap">
-                        <div class="product-bar" style="width:${barWidth}%"></div>
-                    </div>
-                    <span class="product-qty">${p.qty}</span>
-                    <span class="product-trend ${trendClass}">${trendLabel}</span>
-                </div>`;
+            <div class="product-row">
+                <span class="product-name">${p.name}</span>
+                <div class="product-bar-wrap">
+                    <div class="product-bar" style="width:${barWidth}%"></div>
+                </div>
+                <span class="product-qty">${p.qty}</span>
+                <span class="day-trend ${trendClass}" style="margin-left:8px;">${trendLabel}</span>
+            </div>`;
         }).join("");
     }
 
-    // Events
     searchBtn.addEventListener("click", () => {
         const city = cityInput.value.trim();
         if (city) getWeatherAndForecast(city);
     });
 
-    cityInput.addEventListener("keypress", (e) => {
+    cityInput.addEventListener("keypress", e => {
         if (e.key === "Enter") {
             const city = cityInput.value.trim();
             if (city) getWeatherAndForecast(city);
@@ -533,7 +720,7 @@
 
     locationBtn.addEventListener("click", () => {
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
+            navigator.geolocation.getCurrentPosition(async pos => {
                 const { latitude, longitude } = pos.coords;
                 const GEO_URL = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${API_KEY}`;
                 const res = await fetch(GEO_URL);
@@ -545,4 +732,4 @@
 
     window.addEventListener("load", () => getWeatherAndForecast("Binangonan"));
 </script>
-{% endblock %}
+{% endblock %} Good luck please.

@@ -3,224 +3,424 @@
 
 {% block title %}CraveCast - Events & Promos{% endblock %}
 
+{% block extra_css %}
+<style>
+    .events-table-wrap { margin-top: 8px; }
+
+    .event-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .date-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: var(--blue-dim);
+        color: var(--blue);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .event-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+
+    .empty-events {
+        text-align: center;
+        padding: 56px 20px;
+        color: var(--text-dim);
+    }
+
+    .empty-events .icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-events p { font-size: 13px; }
+
+    .request-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 28px;
+    }
+
+    .request-card-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .request-card-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .alert {
+        padding: 13px 18px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .alert-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+    .alert-error   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(255,61,90,0.3); }
+
+    /* Tab styles */
+    .tab-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .tab-btn {
+        padding: 8px 22px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Syne', sans-serif;
+    }
+
+    .tab-btn.active {
+        background: var(--accent, #ff3d5a);
+        color: #fff;
+        border-color: transparent;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Archive row styling */
+    .archived-row td {
+        opacity: 0.55;
+    }
+
+    .btn-archive {
+        padding: 5px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-archive:hover {
+        background: var(--surface-hover, rgba(255,255,255,0.06));
+        color: var(--text);
+    }
+
+    .btn-restore {
+        padding: 5px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(16,185,129,0.4);
+        background: var(--green-dim);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-restore:hover {
+        opacity: 0.8;
+    }
+
+    .done-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: var(--surface);
+        color: var(--text-muted);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid var(--border);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<style>
-:root {
-    --brand-black: #000000;
-    --white-bg: #ffffff;
-    --grey-text: #666666;
-    --light-grey-bg: #f5f5f5;
-    --border: #eee;
-}
+<div class="page-header">
+    <div>
+        <h1>Events & Promos</h1>
+        <p>Manage upcoming store activities and marketing campaigns</p>
+    </div>
 
-/* Table */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border: 1px solid var(--border);
-    margin-top: 20px;
-}
-
-table thead th {
-    background: var(--light-grey-bg);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    padding: 15px;
-    text-align: left;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-
-table tbody td {
-    padding: 15px;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.85rem;
-}
-
-/* Button */
-.btn-black-rect {
-    background: var(--brand-black);
-    color: #fff;
-    border: 2px solid var(--brand-black);
-    padding: 12px 24px;
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    transition: 0.3s;
-    letter-spacing: 1px;
-}
-
-.btn-black-rect:hover {
-    background: #fff;
-    color: #000;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-}
-
-.modal-content {
-    background: #fff;
-    margin: 10% auto;
-    padding: 35px;
-    width: 400px;
-    border-radius: 0;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.modal-content h2 {
-    font-size: 1.2rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    border-bottom: 3px solid #000;
-    display: inline-block;
-}
-
-/* Form Styles */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-    color: #888;
-}
-
-.form-group input, .form-group textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
-    font-family: inherit;
-    font-size: 0.9rem;
-    border-radius: 0;
-}
-
-.form-group input:focus, .form-group textarea:focus {
-    outline: none;
-    border-color: #000;
-}
-
-textarea {
-    height: 80px;
-    resize: none;
-}
-
-/* Alert */
-.alert {
-    padding: 15px;
-    background: #000;
-    color: #fff;
-    font-size: 0.8rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-    text-transform: uppercase;
-}
-</style>
-
-<div class="header" style="margin-bottom: 25px;">
-    <h1 style="font-weight: 900; font-size: 2rem;">Events & Promos</h1>
-    <p style="color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Manage upcoming store activities and marketing campaigns</p>
+    {% if not read_only %}
+        <button class="btn btn-primary" onclick="openModal('eventModal')">
+            <i class='bx bx-plus'></i> Add New Event
+        </button>
+    {% else %}
+        <button class="btn btn-primary" onclick="openModal('staffEventModal')">
+            <i class='bx bx-send'></i> Request New Event
+        </button>
+    {% endif %}
 </div>
 
-
-<div style="margin-bottom:20px;">
-    <button class="btn-black-rect"
-        onclick="document.getElementById('eventModal').style.display='block'">
-        + Add New Event / Promo
+<!-- TAB BAR -->
+<div class="tab-bar">
+    <button class="tab-btn active" id="tab-upcoming" onclick="switchTab('upcoming')">
+        🗓️ Upcoming
+        {% if upcoming %}
+            <span style="margin-left:6px;background:rgba(255,255,255,0.15);
+                         padding:1px 7px;border-radius:20px;font-size:11px;">
+                {{ upcoming|length }}
+            </span>
+        {% endif %}
+    </button>
+    <button class="tab-btn" id="tab-archived" onclick="switchTab('archived')">
+        📦 Archive
+        {% if archived %}
+            <span style="margin-left:6px;background:rgba(255,255,255,0.15);
+                         padding:1px 7px;border-radius:20px;font-size:11px;">
+                {{ archived|length }}
+            </span>
+        {% endif %}
     </button>
 </div>
 
-<div class="bottom-data">
+<!-- UPCOMING EVENTS PANEL -->
+<div class="tab-panel active" id="panel-upcoming">
+    <div class="events-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 28%;">Event / Promo</th>
+                    <th style="width: 18%;">Target Date</th>
+                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};">Description</th>
+                    {% if not read_only %}
+                    <th style="width: 14%; text-align:center;">Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in upcoming %}
+                <tr>
+                    <td><span class="event-name">{{ event.event_name }}</span></td>
+                    <td>
+                        <span class="date-pill">📅 {{ event.event_date }}</span>
+                    </td>
+                    <td><span class="event-desc">{{ event.description|default:"No description provided." }}</span></td>
+                    {% if not read_only %}
+                    <td style="text-align:center;">
+                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-archive">
+                            Archive
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
+                        <div class="empty-events">
+                            <div class="icon">🗓️</div>
+                            <p>No upcoming events or promos recorded.<br>
+                            {% if not read_only %}
+                                Add your first one to get started.
+                            {% else %}
+                                Submit a request and the owner will review it.
+                            {% endif %}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ARCHIVED EVENTS PANEL -->
+<div class="tab-panel" id="panel-archived">
+    <div class="events-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 28%;">Event / Promo</th>
+                    <th style="width: 18%;">Date</th>
+                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};">Description</th>
+                    {% if not read_only %}
+                    <th style="width: 14%; text-align:center;">Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in archived %}
+                <tr class="archived-row">
+                    <td><span class="event-name">{{ event.event_name }}</span></td>
+                    <td>
+                        <span class="done-pill">✓ {{ event.event_date }}</span>
+                    </td>
+                    <td><span class="event-desc">{{ event.description|default:"No description provided." }}</span></td>
+                    {% if not read_only %}
+                    <td style="text-align:center;">
+                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-restore">
+                            Restore
+                        </a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
+                        <div class="empty-events">
+                            <div class="icon">📦</div>
+                            <p>No archived events yet.<br>
+                            Past events are automatically moved here.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- STAFF: My Event Requests History -->
+{% if read_only and my_event_requests %}
+<div class="request-card">
+    <div class="request-card-header">
+        <h3>My Event Requests</h3>
+        <span class="badge badge-blue">{{ my_event_requests|length }} submitted</span>
+    </div>
     <table>
         <thead>
             <tr>
-                <th style="width: 25%;">Event Name</th>
-                <th style="width: 20%;">Target Date</th>
-                <th style="width: 55%;">Description</th>
+                <th>Event Name</th>
+                <th>Event Date</th>
+                <th>Description</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:center;">Submitted</th>
             </tr>
         </thead>
-
         <tbody>
-            {% for event in events %}
+            {% for req in my_event_requests %}
             <tr>
-                <td><strong>{{ event.event_name }}</strong></td>
-                <td><span style="background: #eee; padding: 4px 8px; font-weight: 700; font-size: 0.75rem;">{{ event.event_date }}</span></td>
-                <td style="color:#555; line-height: 1.4;">{{ event.description|default:"No description provided." }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3" style="text-align:center; padding:50px; color:#aaa; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">
-                    No upcoming events or promos recorded.
+                <td><strong>{{ req.event_name }}</strong></td>
+                <td>
+                    <span class="date-pill">📅 {{ req.event_date }}</span>
+                </td>
+                <td><span class="event-desc">{{ req.description|default:"—" }}</span></td>
+                <td style="text-align:center;">
+                    {% if req.status == 'pending' %}
+                        <span class="badge badge-amber">⏳ Pending</span>
+                    {% elif req.status == 'approved' %}
+                        <span class="badge badge-green">✓ Approved</span>
+                    {% else %}
+                        <span class="badge badge-red">✕ Rejected</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center; color:var(--text-muted); font-size:13px;">
+                    {{ req.created_at|date:"M d, Y" }}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+{% endif %}
 
-<!-- ADD EVENT MODAL -->
+<!-- OWNER: Add Event Modal -->
+{% if not read_only %}
 <div id="eventModal" class="modal">
-    <div class="modal-content">
-
-        <h2>Create Event</h2>
-
+    <div class="modal-box">
+        <h2>Create Event / Promo</h2>
         <form method="POST">
             {% csrf_token %}
-
             <div class="form-group">
                 <label>Event / Promo Name</label>
                 <input type="text" name="event_name" required placeholder="e.g. Buy 1 Take 1 Monday">
             </div>
-
             <div class="form-group">
                 <label>Event Date</label>
                 <input type="date" name="event_date" required>
             </div>
-
             <div class="form-group">
                 <label>Description (Optional)</label>
-                <textarea name="description" placeholder="Describe the promo mechanics..."></textarea>
+                <textarea name="description" style="height: 90px; resize: none;"
+                    placeholder="Describe the promo mechanics..."></textarea>
             </div>
-
-            <button type="submit" class="btn-black-rect" style="width:100%; margin-top: 10px;">
-                Save Configuration
-            </button>
-
-            <button type="button"
-                onclick="document.getElementById('eventModal').style.display='none'"
-                style="width: 100%; margin-top:10px; background:none; border:none; cursor:pointer; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #888;">
-                Close and Exit
-            </button>
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class='bx bx-save'></i> Save Event
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="closeModal('eventModal')">
+                    Cancel
+                </button>
+            </div>
         </form>
-
     </div>
 </div>
+{% endif %}
+
+<!-- STAFF: Request Event Modal -->
+{% if read_only %}
+<div id="staffEventModal" class="modal">
+    <div class="modal-box">
+        <h2>Request New Event</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; margin-top:-12px;">
+            Your request will be reviewed by the owner before being published.
+        </p>
+        <form method="POST" action="{% url 'staff-event-request' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Event / Promo Name</label>
+                <input type="text" name="event_name" required placeholder="e.g. Buy 1 Take 1 Monday">
+            </div>
+            <div class="form-group">
+                <label>Event Date</label>
+                <input type="date" name="event_date" required>
+            </div>
+            <div class="form-group">
+                <label>Description (Optional)</label>
+                <textarea name="description" style="height: 90px; resize: none;"
+                    placeholder="Describe the promo mechanics..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class='bx bx-send'></i> Submit Request
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="closeModal('staffEventModal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 <script>
-    // Close modal if user clicks outside the content box
-    window.onclick = function(event) {
-        let modal = document.getElementById('eventModal');
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+}
 </script>
 
 {% endblock %}

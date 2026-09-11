@@ -1,0 +1,178 @@
+{% comment %}
+Notification bell panel + polling.
+
+Include this once per page, anywhere AFTER the <nav> that holds the bell.
+The nav must contain:
+    <div class="nav-icon-btn" id="notif-btn" onclick="toggleNotifPanel()">
+        <i class='bx bx-bell'></i>
+        <div class="notif-dot" id="notif-dot" style="display:none;"></div>
+    </div>
+{% endcomment %}
+
+<div id="notif-panel" style="
+    display:none; position:fixed; top:64px; right:16px;
+    width:340px; max-height:420px; overflow-y:auto;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; box-shadow:var(--shadow); z-index:1500;">
+    <div style="padding:14px 18px; border-bottom:1px solid var(--border);
+                display:flex; justify-content:space-between; align-items:center;
+                position:sticky; top:0; background:var(--surface);">
+        <span style="font-family:'Syne',sans-serif; font-weight:700; font-size:14px;">🔔 Notifications</span>
+        <button onclick="markAllRead()" style="font-size:11px; color:var(--red);
+                background:none; border:none; cursor:pointer; font-weight:600;">Mark all read</button>
+    </div>
+    <div id="notif-list" style="padding:8px 0;">
+        <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">
+            Loading...
+        </div>
+    </div>
+</div>
+
+<script>
+/* ── NOTIFICATIONS ────────────────────────────────────── */
+const NOTIF_CSRF = "{{ csrf_token }}";
+let notifOpen = false;
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notif-panel');
+    notifOpen = !notifOpen;
+    panel.style.display = notifOpen ? 'block' : 'none';
+    if (notifOpen) loadNotifications();
+}
+
+document.addEventListener('click', function(e) {
+    const panel = document.getElementById('notif-panel');
+    const btn   = document.getElementById('notif-btn');
+    if (notifOpen && !panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.style.display = 'none';
+        notifOpen = false;
+    }
+});
+
+function setNotifDot(unread) {
+    document.getElementById('notif-dot').style.display = unread ? 'block' : 'none';
+}
+
+function loadNotifications() {
+    const list = document.getElementById('notif-list');
+    fetch('/notifications/api/', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(data => {
+        const items = data.notifications || [];
+        setNotifDot(data.unread);
+
+        if (items.length === 0) {
+            list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
+                                <i class='bx bx-bell-off' style='font-size:28px;display:block;margin-bottom:8px;'></i>
+                                No notifications
+                              </div>`;
+            return;
+        }
+
+        list.innerHTML = items.map(n => `
+            <div class="notif-row" id="notif-${n.id}" data-id="${n.id}" data-link="${n.link ? escHtml(n.link) : ''}" style="
+                padding:12px 18px; border-bottom:1px solid var(--border);
+                display:flex; gap:10px; align-items:flex-start;
+                background:${n.is_read ? 'transparent' : 'var(--red-dim)'};
+                transition:background 0.2s;
+                ${n.link ? 'cursor:pointer;' : ''}">
+                <span style="font-size:18px; margin-top:1px;">${notifIcon(n.type)}</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px;">
+                        ${escHtml(n.title)}
+                    </div>
+                    <div style="font-size:12px; color:var(--text); opacity:0.85; margin-bottom:3px; white-space:normal;">
+                        ${escHtml(n.message)}
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted);">${timeAgo(n.created_at)}</div>
+                </div>
+                ${!n.is_read ? `<button class="notif-mark-read-btn" data-id="${n.id}"
+                    style="font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;
+                           white-space:nowrap;font-weight:600;flex-shrink:0;">Mark read</button>` : ''}
+            </div>`).join('');
+    })
+    .catch(() => {
+        list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
+                            Could not load notifications.
+                          </div>`;
+    });
+}
+
+function markOneRead(id) {
+    fetch(`/notifications/${id}/read/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': NOTIF_CSRF }
+    }).then(() => loadNotifications());
+}
+
+function markAllRead() {
+    fetch('/notifications/read-all/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': NOTIF_CSRF }
+    }).then(() => loadNotifications());
+}
+
+// Clicking a notification takes you to what it's about (e.g. a low-stock
+// alert opens Inventory scrolled to that exact item). The "Mark read"
+// button stays independently clickable without triggering the navigation.
+document.getElementById('notif-list').addEventListener('click', function (e) {
+    const markBtn = e.target.closest('.notif-mark-read-btn');
+    if (markBtn) {
+        e.stopPropagation();
+        markOneRead(markBtn.dataset.id);
+        return;
+    }
+    const row = e.target.closest('.notif-row');
+    if (row && row.dataset.link) {
+        fetch(`/notifications/${row.dataset.id}/read/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': NOTIF_CSRF }
+        });
+        window.location.href = row.dataset.link;
+    }
+});
+
+function notifIcon(type) {
+    const map = {
+        'out_of_stock': '🚫',
+        'low_stock':    '📦',
+        'expired':      '🗓️',
+        'expiring':     '⚠️',
+        'predicted_shortage': '🔮',
+        'approval':     '✅',
+        'contract':     '📄',
+        'upload':       '📤',
+        'general':      'ℹ️',
+    };
+    return map[type] || '🔔';
+}
+
+function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 60)    return `${diff}s ago`;
+    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Poll every 60s so new alerts (restock / out of stock / expiry)
+      surface without the panel having to be opened ─────── */
+function pollNotifDot() {
+    fetch('/notifications/api/', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { if (data) setNotifDot(data.unread); })
+    .catch(() => {});
+}
+pollNotifDot();
+setInterval(pollNotifDot, 60000);
+</script>

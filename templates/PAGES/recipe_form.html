@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CraveCast - {{ action }} Recipe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recipe-form-wrap { max-width: 680px; }
+    .ingredient-lines { margin-top: 8px; }
+
+    .ingredient-line {
+        display: grid;
+        grid-template-columns: 1fr 160px 36px;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+        animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+    /* ── shared input / select style ── */
+    .ingredient-line select,
+    .qty-wrap input {
+        width: 100%;
+        padding: 11px 12px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        color: var(--text);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        transition: border-color .2s, background .2s;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .ingredient-line select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+        cursor: pointer;
+    }
+
+    .ingredient-line select:focus,
+    .qty-wrap input:focus {
+        outline: none;
+        border-color: var(--red);
+        background: var(--surface3);
+    }
+
+    .ingredient-line select option {
+        background: var(--surface2);
+        color: var(--text);
+    }
+
+    .remove-btn {
+        display:flex; align-items:center; justify-content:center;
+        width:36px; height:36px; border-radius:9px;
+        background:var(--red-dim); border:1px solid rgba(239,68,68,.3);
+        color:var(--red); cursor:pointer; font-size:18px;
+        transition:all .2s; flex-shrink:0;
+    }
+    .remove-btn:hover { background:var(--red); color:#fff; }
+
+    .add-ingredient-btn {
+        margin-top: 8px;
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 9px 16px; border-radius: 10px;
+        background: var(--surface2); border: 1px dashed var(--border);
+        color: var(--text-muted); font-size: 13px; font-weight: 600;
+        cursor: pointer; transition: all .2s;
+    }
+    .add-ingredient-btn:hover { background:var(--surface3); color:var(--text); border-color:var(--border-hover); }
+
+    .unit-hint { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+    .form-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 16px;
+    }
+
+    .form-card-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 13px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .qty-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .unit-badge {
+        font-size: 11px; font-weight: 700;
+        color: var(--text-muted);
+        background: var(--surface3);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 4px 8px;
+        white-space: nowrap;
+        min-width: 34px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>{{ action }} Recipe</h1>
+        <p>Define which ingredients are used per serving</p>
+    </div>
+    <a href="{% url 'recipe_list' %}" class="btn btn-ghost">
+        <i class='bx bx-arrow-back'></i> Back to Recipes
+    </a>
+</div>
+
+<div class="recipe-form-wrap">
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Product Info -->
+        <div class="form-card">
+            <p class="form-card-title">🍵 Product Info</p>
+
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" name="product_name"
+                       value="{{ recipe.product_name|default:'' }}"
+                       placeholder="e.g. Hokkaido Milk Tea"
+                       required>
+                <p class="unit-hint">Must exactly match the name used in your sales CSV upload.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Notes <span style="font-weight:400; color:var(--text-muted);">(optional)</span></label>
+                <input type="text" name="notes"
+                       value="{{ recipe.notes|default:'' }}"
+                       placeholder="e.g. 16oz serving, hot or iced">
+            </div>
+        </div>
+
+        <!-- Ingredient Lines -->
+        <div class="form-card">
+            <p class="form-card-title">🌿 Ingredients per Serving</p>
+
+            <div style="display:grid; grid-template-columns:1fr 160px 36px; gap:8px; margin-bottom:8px;">
+                <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim);">Ingredient</span>
+                <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim);">Amount per Serving</span>
+                <span></span>
+            </div>
+
+            <div class="ingredient-lines" id="ingredientLines">
+                {% if recipe %}
+                    {% for line in recipe.ingredients.all %}
+                    <div class="ingredient-line">
+                        <select name="ingredient_id[]" required onchange="updateUnit(this)">
+                            <option value="" data-unit="">— Select ingredient —</option>
+                            {% for inv in ingredients %}
+                            <option value="{{ inv.pk }}" data-unit="{{ inv.unit }}"
+                                {% if inv.pk == line.inventory_item_id %}selected{% endif %}>
+                                {{ inv.item_name }} ({{ inv.unit }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="qty-wrap">
+                            <input type="number" name="qty_per_serving[]"
+                                   value="{{ line.qty_per_serving|floatformat:0 }}"
+                                   placeholder="0" step="1" min="1" required>
+                            <span class="unit-badge">{{ line.inventory_item.unit }}</span>
+                        </div>
+                        <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="ingredient-line">
+                        <select name="ingredient_id[]" required onchange="updateUnit(this)">
+                            <option value="" data-unit="">— Select ingredient —</option>
+                            {% for inv in ingredients %}
+                            <option value="{{ inv.pk }}" data-unit="{{ inv.unit }}">
+                                {{ inv.item_name }} ({{ inv.unit }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="qty-wrap">
+                            <input type="number" name="qty_per_serving[]"
+                                   placeholder="0" step="1" min="1" required>
+                            <span class="unit-badge">—</span>
+                        </div>
+                        <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="button" class="add-ingredient-btn" onclick="addLine()">
+                <i class='bx bx-plus'></i> Add Ingredient
+            </button>
+
+            <p class="unit-hint" style="margin-top: 12px;">
+                💡 Tip: Enter whole numbers — e.g. 200 ml of Milk, 15 g of Sugar per serving.
+                The unit label updates automatically when you pick an ingredient.
+            </p>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button type="submit" class="btn btn-primary" style="flex:1;">
+                <i class='bx bx-save'></i> Save Recipe
+            </button>
+            <a href="{% url 'recipe_list' %}" class="btn btn-ghost" style="flex:1; text-align:center; line-height:2.2;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<template id="lineTemplate">
+    <div class="ingredient-line">
+        <select name="ingredient_id[]" required onchange="updateUnit(this)">
+            <option value="" data-unit="">— Select ingredient —</option>
+            {% for inv in ingredients %}
+            <option value="{{ inv.pk }}" data-unit="{{ inv.unit }}">
+                {{ inv.item_name }} ({{ inv.unit }})
+            </option>
+            {% endfor %}
+        </select>
+        <div class="qty-wrap">
+            <input type="number" name="qty_per_serving[]"
+                   placeholder="0" step="1" min="1" required>
+            <span class="unit-badge">—</span>
+        </div>
+        <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
+    </div>
+</template>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateUnit(select) {
+    const unit  = select.options[select.selectedIndex].dataset.unit || '—';
+    const badge = select.closest('.ingredient-line').querySelector('.unit-badge');
+    if (badge) badge.textContent = unit;
+}
+
+function addLine() {
+    const tmpl  = document.getElementById('lineTemplate');
+    const clone = tmpl.content.cloneNode(true);
+    document.getElementById('ingredientLines').appendChild(clone);
+}
+
+function removeLine(btn) {
+    const lines = document.querySelectorAll('.ingredient-line');
+    if (lines.length <= 1) {
+        alert("A recipe needs at least one ingredient.");
+        return;
+    }
+    btn.closest('.ingredient-line').remove();
+}
+</script>
+{% endblock %}

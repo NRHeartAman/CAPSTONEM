@@ -1,0 +1,1103 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}CraveCast - Inventory{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Landed here from a notification link — flash the exact row so it's
+       obvious which item the alert was about. */
+    tr:target {
+        animation: notif-highlight 2.5s ease-out;
+    }
+    @keyframes notif-highlight {
+        0%   { background: var(--red-dim); }
+        100% { background: transparent; }
+    }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 24px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 5px;
+        width: fit-content;
+    }
+    .tab-btn {
+        padding: 9px 22px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: none;
+        background: none;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface2); }
+    .tab-btn.active-tab { background: var(--red); color: #fff; }
+
+    /* ── Stats ── */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    /* ── Restock Alert Banner ── */
+    .restock-banner {
+        background: rgba(255, 152, 0, 0.08);
+        border: 1px solid rgba(255, 152, 0, 0.35);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .restock-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .restock-banner-title { font-size: 13px; font-weight: 700; color: #f59e0b; margin-bottom: 4px; }
+    .restock-banner-items { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .restock-banner-items strong { color: var(--text); }
+
+    /* ── Expiry Alert Banner ── */
+    .expiry-banner {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .expiry-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .expiry-banner-title { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .expiry-banner-items { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── Table ── */
+    .empty-row td {
+        text-align: center;
+        padding: 48px !important;
+        color: var(--text-dim) !important;
+        font-size: 13px;
+    }
+    .item-name { font-weight: 600; font-size: 14px; }
+    .qty-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 15px;
+    }
+    .action-btn:hover { background: var(--surface3); color: var(--text); }
+    .action-btn.danger:hover { background: rgba(255,61,90,0.12); color: var(--red); border-color: rgba(255,61,90,0.3); }
+    .action-btn.success:hover { background: rgba(16,185,129,0.12); color: var(--green); border-color: rgba(16,185,129,0.3); }
+    .action-btn.amber:hover { background: rgba(245,158,11,0.12); color: #f59e0b; border-color: rgba(245,158,11,0.3); }
+
+    /* ── Expiry date cell ── */
+    .expiry-near { color: var(--red); font-weight: 700; font-size: 12px; }
+    .expiry-ok   { color: var(--text-muted); font-size: 12px; }
+    .expiry-none { color: var(--text-dim); font-size: 12px; font-style: italic; }
+
+    /* ── Status cell stack (status badge + latest issue badge) ── */
+    .status-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+
+    /* ── Latest issue pill (leaked / expired / contaminated / damaged / other) ── */
+    .issue-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .issue-pill.spilled      { background: rgba(6,182,212,0.12);  color: #22b8cf; }
+    .issue-pill.expired      { background: rgba(255,61,90,0.12);  color: var(--red); }
+    .issue-pill.contaminated { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .issue-pill.damaged      { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .issue-pill.other        { background: var(--surface2);       color: var(--text-muted); }
+
+    /* ── Audit Log Card ── */
+    .audit-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 28px;
+    }
+    .audit-card-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .audit-card-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .audit-type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .audit-restock  { background: rgba(16,185,129,0.12); color: var(--green); }
+    .audit-waste    { background: rgba(255,61,90,0.12);  color: var(--red);   }
+    .audit-initial  { background: rgba(99,102,241,0.12); color: #818cf8;      }
+    .audit-deduct   { background: rgba(245,158,11,0.12); color: #f59e0b;      }
+
+    /* ── Request history card ── */
+    .request-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 28px;
+    }
+    .request-card-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .request-card-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    /* ── Alert messages ── */
+    .alert {
+        padding: 13px 18px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .alert-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+    .alert-error   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(255,61,90,0.3);  }
+
+    /* ── Export panel ── */
+    .export-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .export-panel-icon {
+        width: 44px; height: 44px;
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; color: var(--purple);
+        flex-shrink: 0;
+    }
+    .export-panel-text { flex: 1; min-width: 140px; }
+    .export-panel-text strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
+    .export-panel-text span   { font-size: 12px; color: var(--text-muted); }
+    .export-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .export-select {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+    }
+    .export-select:focus { outline: none; border-color: var(--purple); }
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--purple);
+        color: #fff;
+        padding: 9px 20px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+        font-family: inherit;
+    }
+    .export-btn:hover { opacity: 0.88; }
+
+    /* ── Unit dropdown ── */
+    select.unit-select {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 28px;
+    }
+    select.unit-select:focus { outline: none; border-color: var(--red); }
+
+    /* ── Waste reason textarea ── */
+    textarea.reason-textarea {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 72px;
+    }
+    textarea.reason-textarea:focus { outline: none; border-color: var(--red); }
+
+    /* ── Waste type chips ── */
+    .waste-type-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .waste-type-chip {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .waste-type-chip:hover,
+    .waste-type-chip.selected { background: rgba(255,61,90,0.12); color: var(--red); border-color: rgba(255,61,90,0.4); }
+
+    /* ── Waste modal highlight ── */
+    .waste-item-label {
+        background: rgba(255,61,90,0.08);
+        border: 1px solid rgba(255,61,90,0.2);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* ── Section divider ── */
+    .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        margin-top: 4px;
+    }
+
+    /* ── Tooltip for expiry ── */
+    .expiry-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .expiry-badge.expired { background: rgba(255,61,90,0.15); color: var(--red); }
+    .expiry-badge.soon    { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .expiry-badge.ok      { background: rgba(16,185,129,0.1);  color: var(--green); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Inventory Management</h1>
+        <p>Track and manage your ingredients and shop supplies</p>
+    </div>
+
+    {% if request.user.role == 'OWNER' %}
+    <button class="btn btn-primary" onclick="openModal('entryModal')">
+        <i class='bx bx-plus'></i> Add New Entry
+    </button>
+    {% else %}
+    <button class="btn btn-primary" onclick="openModal('staffRequestModal')">
+        <i class='bx bx-send'></i> Request New Item
+    </button>
+    {% endif %}
+</div>
+
+<!-- ── RESTOCK ALERT BANNER ── -->
+{% if low_stock_items %}
+<div class="restock-banner">
+    <div class="restock-banner-icon">⚠️</div>
+    <div>
+        <div class="restock-banner-title">Restock Alert — {{ low_stock_items|length }} item{{ low_stock_items|length|pluralize }} need attention</div>
+        <div class="restock-banner-items">
+            {% for item in low_stock_items %}
+                <strong>{{ item.item_name }}</strong> ({{ item.stock_qty|floatformat:"-2" }} {{ item.unit }} left){% if not forloop.last %} &nbsp;·&nbsp; {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── EXPIRY ALERT BANNER (Ingredients only) ── -->
+{% if expiring_soon_items %}
+<div class="expiry-banner">
+    <div class="expiry-banner-icon">🗓️</div>
+    <div>
+        <div class="expiry-banner-title">Expiry Warning — {{ expiring_soon_items|length }} ingredient{{ expiring_soon_items|length|pluralize }} expiring within 7 days</div>
+        <div class="expiry-banner-items">
+            {% for item in expiring_soon_items %}
+                <strong>{{ item.item_name }}</strong> — expires {{ item.expiry_date|date:"M d, Y" }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ── STAT CARDS ── -->
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Daily Sales</div>
+        <div class="stat-value">₱{{ daily_sales|floatformat:2|default:"0.00"|intcomma }}</div>
+        <div class="stat-sub">Today's revenue</div>
+    </div>
+    <div class="stat-card teal">
+        <div class="stat-label">Weekly Sales</div>
+        <div class="stat-value">₱{{ weekly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
+        <div class="stat-sub">This week total</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-label">Monthly Sales</div>
+        <div class="stat-value">₱{{ monthly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
+        <div class="stat-sub">This month total</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-label">Items Tracked</div>
+        <div class="stat-value">{{ inventory|length|intcomma }}</div>
+        <div class="stat-sub">In current category</div>
+    </div>
+</div>
+
+<!-- ── EXPORT PANEL ── -->
+{% if request.user.role == 'OWNER' or request.user.can_export %}
+<div class="export-panel">
+    <div class="export-panel-icon">
+        <i class='bx bx-download'></i>
+    </div>
+    <div class="export-panel-text">
+        <strong>Export Sales Data</strong>
+        <span>Download filtered sales records as a CSV file</span>
+    </div>
+    <form method="get" action="{% url 'export-sales-csv' %}" class="export-filters">
+        <select name="month" class="export-select">
+            <option value="">All Months</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select name="year" class="export-select">
+            <option value="">All Years</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+        </select>
+        <button type="submit" class="export-btn">
+            <i class='bx bx-download'></i> Export CSV
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<!-- ── TABS ── -->
+<div class="tab-bar">
+    <a href="?tab=Stock"  class="tab-btn {% if current_tab == 'Stock' %}active-tab{% endif %}">🌿 Ingredients</a>
+    <a href="?tab=Supply" class="tab-btn {% if current_tab == 'Supply' %}active-tab{% endif %}">📦 Supplies</a>
+</div>
+
+<!-- ── MAIN TABLE ── -->
+<table>
+    <thead>
+        <tr>
+            <th>Item Name</th>
+            <th>Initial Stock</th>
+            <th>Current Level</th>
+            {% if current_tab == 'Stock' %}<th>Expiry Date</th>{% endif %}
+            <th>Status</th>
+            {% if request.user.role == 'OWNER' %}<th style="text-align:center;">Actions</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in inventory %}
+        <tr id="inv-item-{{ item.pk }}">
+            <td><span class="item-name">{{ item.item_name }}</span></td>
+            <td style="color: var(--text-muted);">{{ item.total_stock|floatformat:"-2" }} {{ item.unit }}</td>
+            <td>
+                <span class="qty-pill {% if item.stock_qty <= item.restock_threshold %}badge-red{% else %}badge-green{% endif %}">
+                    {{ item.stock_qty|floatformat:"-2" }} {{ item.unit }}
+                </span>
+            </td>
+
+            {% if current_tab == 'Stock' %}
+            <td>
+                {% if item.expiry_date %}
+                    {% if item.is_expired %}
+                        <span class="expiry-badge expired">🚫 Expired</span>
+                    {% elif item.expiry_soon %}
+                        <span class="expiry-badge soon">⚠ {{ item.expiry_date|date:"M d, Y" }}</span>
+                    {% else %}
+                        <span class="expiry-badge ok">{{ item.expiry_date|date:"M d, Y" }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="expiry-none">—</span>
+                {% endif %}
+            </td>
+            {% endif %}
+
+            <td>
+                <div class="status-stack">
+                    {% if item.stock_qty <= item.restock_threshold %}
+                        <span class="badge badge-red">⚠ Low Stock</span>
+                    {% else %}
+                        <span class="badge badge-green">✓ Stable</span>
+                    {% endif %}
+
+                    {% if item.latest_waste_type %}
+                        {% if item.latest_waste_type == 'spilled' %}
+                            <span class="issue-pill spilled">💧 Leaked / spilled</span>
+                        {% elif item.latest_waste_type == 'expired' %}
+                            <span class="issue-pill expired">🗓 Expired</span>
+                        {% elif item.latest_waste_type == 'contaminated' %}
+                            <span class="issue-pill contaminated">⚠ Contaminated</span>
+                        {% elif item.latest_waste_type == 'damaged' %}
+                            <span class="issue-pill damaged">📦 Damaged</span>
+                        {% else %}
+                            <span class="issue-pill other">📝 {{ item.latest_waste_type|capfirst }}</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </td>
+
+            {% if request.user.role == 'OWNER' %}
+            <td>
+                <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                    <!-- Add Stock -->
+                    <button class="action-btn success" title="Add Stock"
+                        onclick="openAddStock({{ item.id }}, '{{ item.item_name|escapejs }}', '{{ item.unit }}')">
+                        <i class='bx bx-plus-circle'></i>
+                    </button>
+                    <!-- Edit -->
+                    <button class="action-btn" title="Edit Item"
+                        onclick="openEditModal({{ item.id }}, '{{ item.item_name|escapejs }}', {{ item.total_stock }}, '{{ item.unit }}', {{ item.restock_threshold }}{% if current_tab == 'Stock' %}, '{{ item.expiry_date|date:"Y-m-d" }}'{% endif %})">
+                        <i class='bx bx-edit'></i>
+                    </button>
+                    {% if current_tab == 'Stock' %}
+                    <!-- Log Waste -->
+                    <button class="action-btn danger" title="Log Waste / Spoilage (leaked, expired, contaminated, damaged...)"
+                        onclick="openWasteModal({{ item.id }}, '{{ item.item_name|escapejs }}', '{{ item.unit }}', {{ item.stock_qty }})">
+                        <i class='bx bx-trash-alt'></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </td>
+            {% endif %}
+        </tr>
+        {% empty %}
+        <tr class="empty-row">
+            <td colspan="{% if current_tab == 'Stock' %}6{% else %}5{% endif %}">
+                <div style="font-size: 28px; margin-bottom: 10px;">📭</div>
+                No items found in {{ current_tab }} category.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ── AUDIT LOG CARD ── -->
+{% if request.user.role == 'OWNER' and audit_logs %}
+<div class="audit-card">
+    <div class="audit-card-header">
+        <h3>📋 Inventory Audit Log</h3>
+        <span class="badge badge-blue">{{ audit_logs|length }} recent entries</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Qty Change</th>
+                <th>Performed By</th>
+                <th>Notes / Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in audit_logs %}
+            <tr>
+                <td style="font-size:12px; color:var(--text-muted);">{{ log.created_at|date:"M d, Y H:i" }}</td>
+                <td><strong>{{ log.item_name }}</strong></td>
+                <td>
+                    {% if log.action == 'restock' %}
+                        <span class="audit-type-pill audit-restock">➕ Restock</span>
+                    {% elif log.action == 'waste' %}
+                        <span class="audit-type-pill audit-waste">🗑 Waste{% if log.waste_type %} — {{ log.waste_type|capfirst }}{% endif %}</span>
+                    {% elif log.action == 'initial' %}
+                        <span class="audit-type-pill audit-initial">🆕 Initial</span>
+                    {% elif log.action == 'deduct' %}
+                        <span class="audit-type-pill audit-deduct">➖ Deduct</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.action == 'restock' %}
+                        <span style="color:var(--green); font-weight:700;">+{{ log.qty_change|floatformat:"-2" }} {{ log.unit }}</span>
+                    {% elif log.action == 'waste' or log.action == 'deduct' %}
+                        <span style="color:var(--red); font-weight:700;">−{{ log.qty_change|floatformat:"-2" }} {{ log.unit }}</span>
+                    {% else %}
+                        <span style="color:var(--text-muted);">{{ log.qty_change|floatformat:"-2" }} {{ log.unit }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:12px;">{{ log.performed_by }}</td>
+                <td style="font-size:12px; color:var(--text-muted);">{{ log.notes|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- ── STAFF: My Requests History ── -->
+{% if request.user.role != 'OWNER' and my_inventory_requests %}
+<div class="request-card">
+    <div class="request-card-header">
+        <h3>My Inventory Requests</h3>
+        <span class="badge badge-blue">{{ my_inventory_requests|length }} recent</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Category</th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:center;">Submitted</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in my_inventory_requests %}
+            <tr>
+                <td><strong>{{ req.item_name }}</strong></td>
+                <td>{{ req.stock_qty|floatformat:"-2" }}</td>
+                <td>{{ req.unit }}</td>
+                <td><span class="badge badge-blue">{{ req.category }}</span></td>
+                <td style="text-align:center;">
+                    {% if req.status == 'pending' %}
+                        <span class="badge badge-amber">⏳ Pending</span>
+                    {% elif req.status == 'approved' %}
+                        <span class="badge badge-green">✓ Approved</span>
+                    {% else %}
+                        <span class="badge badge-red">✕ Rejected</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:center; color:var(--text-muted); font-size:13px;">
+                    {{ req.created_at|date:"M d, Y" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+
+{# ══════════════════════════════════════════════════════════════ #}
+{# ── MODALS (Owner only) ─────────────────────────────────────── #}
+{# ══════════════════════════════════════════════════════════════ #}
+
+{% if request.user.role == 'OWNER' %}
+
+<!-- ① ADD NEW ENTRY MODAL -->
+<div id="entryModal" class="modal">
+    <div class="modal-box">
+        <h2>New Inventory Entry</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="add_entry">
+
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="item_name" required placeholder="e.g. Arabica Beans">
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Initial Stock</label>
+                    <input type="number" name="total_stock" required placeholder="0" min="0" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <select name="unit" class="unit-select" id="entryUnitSelect">
+                        <optgroup label="Weight">
+                            <option value="kg">kg — kilogram</option>
+                            <option value="g">g — gram</option>
+                            <option value="lb">lb — pound</option>
+                        </optgroup>
+                        <optgroup label="Volume">
+                            <option value="L">L — liter</option>
+                            <option value="mL">mL — milliliter</option>
+                        </optgroup>
+                        <optgroup label="Count">
+                            <option value="pcs">pcs — pieces</option>
+                            <option value="pack">pack</option>
+                            <option value="box">box</option>
+                            <option value="sachet">sachet</option>
+                            <option value="roll">roll</option>
+                            <option value="bundle">bundle</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Restock Alert Threshold <span style="color:var(--text-muted); font-weight:400;">(alert when stock falls below this)</span></label>
+                <input type="number" name="restock_threshold" placeholder="e.g. 20" min="0" step="0.01">
+            </div>
+
+            <div class="form-group" id="entryExpiryGroup">
+                <label>Expiry Date <span style="color:var(--text-muted); font-weight:400;">(Ingredients only)</span></label>
+                <input type="date" name="expiry_date">
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category" id="entryCategorySelect" onchange="toggleExpiryField('entryExpiryGroup', this.value)">
+                    <option value="Stock"  {% if current_tab == 'Stock'  %}selected{% endif %}>🌿 Ingredient (Stock)</option>
+                    <option value="Supply" {% if current_tab == 'Supply' %}selected{% endif %}>📦 Supply</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn btn-primary" style="flex:1;">
+                    <i class='bx bx-save'></i> Save Entry
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('entryModal')">
+               Return
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ② EDIT ITEM MODAL -->
+<div id="editModal" class="modal">
+    <div class="modal-box">
+        <h2>Edit Inventory Item</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="edit_entry">
+            <input type="hidden" name="item_id" id="editItemId">
+
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="item_name" id="editItemName" required>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Initial Stock</label>
+                    <input type="number" name="total_stock" id="editTotalStock" required min="0" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <select name="unit" class="unit-select" id="editUnitSelect">
+                        <optgroup label="Weight">
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="lb">lb</option>
+                        </optgroup>
+                        <optgroup label="Volume">
+                            <option value="L">L</option>
+                            <option value="mL">mL</option>
+                        </optgroup>
+                        <optgroup label="Count">
+                            <option value="pcs">pcs</option>
+                            <option value="pack">pack</option>
+                            <option value="box">box</option>
+                            <option value="sachet">sachet</option>
+                            <option value="roll">roll</option>
+                            <option value="bundle">bundle</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Restock Alert Threshold</label>
+                <input type="number" name="restock_threshold" id="editRestockThreshold" min="0" step="0.01">
+            </div>
+
+            <div class="form-group" id="editExpiryGroup">
+                <label>Expiry Date</label>
+                <input type="date" name="expiry_date" id="editExpiryDate">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn btn-primary" style="flex:1;">
+                    <i class='bx bx-save'></i> Save Changes
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('editModal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ③ ADD STOCK MODAL (Restock) -->
+<div id="addStockModal" class="modal">
+    <div class="modal-box">
+        <h2>➕ Add Stock</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="add_stock">
+            <input type="hidden" name="item_id" id="addStockItemId">
+
+            <div class="waste-item-label" id="addStockItemLabel" style="background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2);">
+                <i class='bx bx-plus-circle' style="color:var(--green);"></i>
+                <span id="addStockItemName">—</span>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Quantity to Add</label>
+                    <input type="number" name="qty_to_add" id="addStockQty" required placeholder="0" min="0.01" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <input type="text" name="unit" id="addStockUnit" readonly
+                        style="background:var(--surface2); color:var(--text-muted); cursor:not-allowed;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Date Received</label>
+                <input type="date" name="date_received" id="addStockDate" required>
+            </div>
+
+            <div class="form-group">
+                <label>Supplier / Source <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
+                <input type="text" name="supplier" placeholder="ex: Milk Supplier, name">
+            </div>
+
+            <div class="form-group">
+                <label>Notes <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
+                <textarea class="reason-textarea" name="notes" placeholder="e.g. Batch no. 2024-001, delivery from supplier..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn btn-primary" style="flex:1; background:var(--green);">
+                    <i class='bx bx-check'></i> Confirm Add Stock
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('addStockModal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ④ LOG WASTE / SPOILAGE MODAL (Ingredients only) -->
+<div id="wasteModal" class="modal">
+    <div class="modal-box">
+        <h2>🗑 Log Waste / Spoilage</h2>
+        <p style="font-size:12px; color:var(--text-muted); margin:-10px 0 16px;">
+            This will deduct from current stock, record the loss in the audit log, and show up as a
+            status badge on this item (e.g. "Leaked / spilled", "Expired", "Contaminated", "Damaged").
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="log_waste">
+            <input type="hidden" name="item_id" id="wasteItemId">
+
+            <div class="waste-item-label" id="wasteItemLabel">
+                <i class='bx bx-error-circle' style="color:var(--red);"></i>
+                <span id="wasteItemName">—</span>
+                <span style="margin-left:auto; color:var(--text-muted); font-weight:400; font-size:12px;">
+                    Current stock: <strong id="wasteItemStock" style="color:var(--text);">—</strong>
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label>Waste Type</label>
+                <div class="waste-type-group">
+                    <button type="button" class="waste-type-chip" onclick="selectWasteType(this, 'spilled')">💧 Leaked / Spilled</button>
+                    <button type="button" class="waste-type-chip" onclick="selectWasteType(this, 'expired')">🗓 Expired</button>
+                    <button type="button" class="waste-type-chip" onclick="selectWasteType(this, 'contaminated')">⚠ Contaminated</button>
+                    <button type="button" class="waste-type-chip" onclick="selectWasteType(this, 'damaged')">📦 Damaged</button>
+                    <button type="button" class="waste-type-chip" onclick="selectWasteType(this, 'other')">📝 Other</button>
+                </div>
+                <input type="hidden" name="waste_type" id="wasteTypeInput" required>
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Quantity Wasted</label>
+                    <input type="number" name="qty_wasted" id="wasteQty" required placeholder="0" min="0.01" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <input type="text" name="unit" id="wasteUnit" readonly
+                        style="background:var(--surface2); color:var(--text-muted); cursor:not-allowed;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Reason / Description</label>
+                <textarea class="reason-textarea" name="notes"
+                    placeholder="e.g. Milk powder bag was torn during delivery, approx 500g spilled on floor. Disposed immediately."></textarea>
+            </div>
+
+            <div id="wasteValidationMsg" style="display:none; font-size:12px; color:var(--red); margin-bottom:12px; font-weight:600;">
+                ⚠ Quantity cannot exceed current stock.
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn btn-primary" style="flex:1; background:var(--red);" id="wasteSubmitBtn"
+                    onclick="return validateWaste()">
+                    <i class='bx bx-trash-alt'></i> Confirm Waste Log
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('wasteModal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endif %}
+
+<!-- STAFF: Request New Item Modal -->
+{% if request.user.role != 'OWNER' %}
+<div id="staffRequestModal" class="modal">
+    <div class="modal-box">
+        <h2>Request New Inventory Item</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; margin-top:-12px;">
+            Your request will be sent to the owner for approval before being added.
+        </p>
+        <form method="POST" action="{% url 'staff-inventory-request' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" name="item_name" required placeholder="ex: Arabica Beans">
+            </div>
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Quantity</label>
+                    <input type="number" name="total_stock" required placeholder="100" min="0" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Unit</label>
+                    <select name="unit" class="unit-select">
+                        <optgroup label="Weight">
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="lb">lb</option>
+                        </optgroup>
+                        <optgroup label="Volume">
+                            <option value="L">L</option>
+                            <option value="mL">mL</option>
+                        </optgroup>
+                        <optgroup label="Count">
+                            <option value="pcs">pcs</option>
+                            <option value="pack">pack</option>
+                            <option value="box">box</option>
+                            <option value="sachet">sachet</option>
+                            <option value="roll">roll</option>
+                            <option value="bundle">bundle</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="Stock"  {% if current_tab == 'Stock'  %}selected{% endif %}>🌿 Ingredient (Stock)</option>
+                    <option value="Supply" {% if current_tab == 'Supply' %}selected{% endif %}>📦 Supply</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <button type="submit" class="btn btn-primary" style="flex:1;">
+                    <i class='bx bx-send'></i> Submit Request
+                </button>
+                <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('staffRequestModal')">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Toggle expiry date field based on category ──
+function toggleExpiryField(groupId, value) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    group.style.display = value === 'Stock' ? 'block' : 'none';
+}
+
+// ── Init expiry visibility on page load ──
+document.addEventListener('DOMContentLoaded', function () {
+    const entryCategory = document.getElementById('entryCategorySelect');
+    if (entryCategory) {
+        toggleExpiryField('entryExpiryGroup', entryCategory.value);
+    }
+
+    // Set today as default date for Add Stock
+    const today = new Date().toISOString().split('T')[0];
+    const addStockDate = document.getElementById('addStockDate');
+    if (addStockDate) addStockDate.value = today;
+});
+
+// ── Open Edit Modal ──
+function openEditModal(id, name, totalStock, unit, threshold, expiryDate) {
+    document.getElementById('editItemId').value   = id;
+    document.getElementById('editItemName').value = name;
+    document.getElementById('editTotalStock').value = totalStock;
+    document.getElementById('editRestockThreshold').value = threshold;
+
+    const unitSelect = document.getElementById('editUnitSelect');
+    if (unitSelect) {
+        // Set matching option or fallback to first
+        const opt = [...unitSelect.options].find(o => o.value === unit);
+        if (opt) opt.selected = true;
+    }
+
+    const expiryGroup = document.getElementById('editExpiryGroup');
+    const expiryInput = document.getElementById('editExpiryDate');
+    if (expiryGroup && expiryInput) {
+        // Show expiry for ingredients tab
+        expiryGroup.style.display = '{{ current_tab }}' === 'Stock' ? 'block' : 'none';
+        expiryInput.value = expiryDate || '';
+    }
+
+    openModal('editModal');
+}
+
+// ── Open Add Stock Modal ──
+function openAddStock(id, name, unit) {
+    document.getElementById('addStockItemId').value   = id;
+    document.getElementById('addStockItemName').textContent = name;
+    document.getElementById('addStockUnit').value     = unit;
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('addStockDate').value = today;
+    openModal('addStockModal');
+}
+
+// ── Open Waste Modal ──
+let _wasteMaxQty = 0;
+function openWasteModal(id, name, unit, currentStock) {
+    document.getElementById('wasteItemId').value = id;
+    document.getElementById('wasteItemName').textContent  = name;
+    document.getElementById('wasteItemStock').textContent = currentStock + ' ' + unit;
+    document.getElementById('wasteUnit').value  = unit;
+    document.getElementById('wasteQty').value   = '';
+    document.getElementById('wasteTypeInput').value = '';
+    document.getElementById('wasteValidationMsg').style.display = 'none';
+    // Clear selected chips
+    document.querySelectorAll('.waste-type-chip').forEach(c => c.classList.remove('selected'));
+    _wasteMaxQty = parseFloat(currentStock);
+    openModal('wasteModal');
+}
+
+// ── Waste type chip selection ──
+function selectWasteType(btn, value) {
+    document.querySelectorAll('.waste-type-chip').forEach(c => c.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('wasteTypeInput').value = value;
+}
+
+// ── Validate waste before submit ──
+function validateWaste() {
+    const qty    = parseFloat(document.getElementById('wasteQty').value) || 0;
+    const type   = document.getElementById('wasteTypeInput').value;
+    const msg    = document.getElementById('wasteValidationMsg');
+
+    if (!type) {
+        alert('Please select a waste type.');
+        return false;
+    }
+    if (qty > _wasteMaxQty) {
+        msg.style.display = 'block';
+        return false;
+    }
+    msg.style.display = 'none';
+    return true;
+}
+</script>
+{% endblock %}

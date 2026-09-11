@@ -1,270 +1,209 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Upload Data - CraveCast{% endblock %}
 
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .upload-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 900px) {
+        .upload-layout { grid-template-columns: 1fr; }
+    }
+
+    .upload-dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 14px;
+        padding: 48px 32px;
+        text-align: center;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-dropzone:hover {
+        border-color: var(--red);
+        background: var(--red-dim);
+    }
+    .upload-dropzone i.bx-cloud-upload {
+        font-size: 46px;
+        color: var(--red);
+        margin-bottom: 12px;
+        display: block;
+    }
+    .upload-dropzone h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .upload-dropzone p {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 18px;
+    }
+    .file-name {
+        margin-top: 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--green);
+    }
+
+    .schema-list {
+        list-style: none;
+        padding: 0;
+        margin: 14px 0 0;
+    }
+    .schema-list li {
+        font-size: 13px;
+        color: var(--text);
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .schema-list li:last-child { border-bottom: none; }
+    .schema-list strong { color: var(--red); }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .filter-bar select {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 9px 14px;
+        font-size: 13px;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .table-card-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .table-card-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<style>
-:root {
-    --brand-black: #000;
-    --white-bg: #fff;
-    --grey-text: #666;
-    --border-color: #eee;
-}
-
-/* HEADER */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-}
-
-.page-header h1 {
-    font-size: 28px;
-    font-weight: 800;
-    margin: 0;
-}
-
-.page-header p {
-    font-size: 11px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* GRID */
-.upload-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-}
-
-/* UPLOAD BOX */
-.upload-box {
-    background: #fff;
-    border: 2px dashed #ddd;
-    padding: 60px 40px;
-    text-align: center;
-    transition: 0.3s;
-}
-
-.upload-box:hover {
-    border-color: #000;
-    background: #fcfcfc;
-}
-
-.upload-box i {
-    font-size: 60px;
-    color: #000;
-    margin-bottom: 15px;
-}
-
-.upload-box h3 {
-    font-size: 18px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.upload-box p {
-    font-size: 12px;
-    color: #777;
-    margin-bottom: 20px;
-}
-
-/* BUTTONS */
-.btn {
-    padding: 12px 24px;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border: 2px solid #000;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.btn-black {
-    background: #000;
-    color: #fff;
-}
-
-.btn-black:hover {
-    background: #fff;
-    color: #000;
-}
-
-.btn-white {
-    background: #fff;
-    color: #000;
-    border: 1px solid #ddd;
-}
-
-.btn-white:hover {
-    border-color: #000;
-}
-
-/* FILE INFO */
-.file-name {
-    margin-top: 15px;
-    font-size: 12px;
-    font-weight: 800;
-    color: #2e7d32;
-    text-transform: uppercase;
-}
-
-/* SIDE BOX */
-.info-box {
-    background: #fff;
-    border: 1px solid #eee;
-    padding: 25px;
-}
-
-.info-box h3 {
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 20px;
-    text-transform: uppercase;
-    border-bottom: 2px solid #000;
-    display: inline-block;
-    padding-bottom: 5px;
-}
-
-.info-box ul {
-    padding: 0;
-    list-style: none;
-}
-
-.info-box ul li {
-    font-size: 12px;
-    padding: 8px 0;
-    color: #444;
-    border-bottom: 1px solid #f9f9f9;
-}
-
-/* TABLE */
-.bottom-data {
-    margin-top: 30px;
-    background: #fff;
-    border: 1px solid #eee;
-}
-
-.bottom-data .header {
-    padding: 20px;
-    border-bottom: 1px solid #f5f5f5;
-    font-weight: 900;
-    text-transform: uppercase;
-    font-size: 13px;
-    letter-spacing: 1px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-thead th {
-    background: #fcfcfc;
-    font-size: 11px;
-    padding: 15px;
-    text-transform: uppercase;
-    text-align: left;
-    color: #888;
-    border-bottom: 1px solid #eee;
-}
-
-tbody td {
-    padding: 15px;
-    font-size: 13px;
-    border-bottom: 1px solid #f5f5f5;
-}
-
-/* ALERT BOXES */
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    border-left: 5px solid transparent;
-}
-.alert-success { background: #000; color: #fff; border-left-color: #4CAF50; }
-.alert-error { background: #ff4d4d; color: #fff; border-left-color: #b30000; }
-
-@media(max-width: 900px) {
-    .upload-grid { grid-template-columns: 1fr; }
-}
-</style>
-
-<!-- HEADER -->
 <div class="page-header">
     <div>
         <h1>Data Management</h1>
-        <p>Historical Sales & Inventory Ingestion</p>
+        <p>Historical sales & inventory data ingestion</p>
     </div>
 </div>
 
-<!-- DJANGO MESSAGES (Populated by views.py) ito yung salarin sa mga yon HAHAHAH, DI PA KASI NAKAAYOS HAHAHAHA-->
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Units Sold Today</div>
+        <div class="stat-value">{{ units_sold_today|default:0|intcomma }}</div>
+        <div class="stat-sub">As of latest data</div>
+    </div>
+    <div class="stat-card teal">
+        <div class="stat-label">Orders Today</div>
+        <div class="stat-value">{{ total_orders_today|default:0|intcomma }}</div>
+        <div class="stat-sub">Transactions logged</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-label">Weekly Revenue</div>
+        <div class="stat-value">₱{{ weekly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
+        <div class="stat-sub">Last 7 days</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-value">₱{{ monthly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
+        <div class="stat-sub">Top seller: {{ top_product }}</div>
+    </div>
+</div>
 
-
-<!-- MAIN GRID -->
-<div class="upload-grid">
-
-    <!-- UPLOAD AREA -->
-    <div class="upload-box">
-        <i class="bx bx-cloud-upload"></i>
+<div class="upload-layout">
+    <div class="card upload-dropzone">
+        <i class='bx bx-cloud-upload'></i>
         <h3>Upload Historical CSV</h3>
         <p>Ensure your CSV follows the required column format before confirming.</p>
 
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-
-            <!-- HIDDEN FILE INPUT -->
             <input type="file" name="csv_file" id="fileInput" hidden accept=".csv">
 
-            <!-- CUSTOM BUTTON TO TRIGGER INPUT -->
-            <button type="button" class="btn btn-white"
-                onclick="document.getElementById('fileInput').click()">
-                <i class="bx bx-file" style="font-size: 14px; margin: 0;"></i> Browse Files
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('fileInput').click()">
+                <i class='bx bx-file'></i> Browse Files
             </button>
 
-            <!-- FILE NAME PREVIEW -->
             <div id="fileName" class="file-name"></div>
 
-            <!-- CONFIRM BUTTON (Hidden until file selected) -->
-            <div style="margin-top: 20px;">
-                <button type="submit" class="btn btn-black" id="uploadBtn" style="display:none;">
-                    Confirm & Process Upload
+            <div style="margin-top: 18px;">
+                <button type="submit" class="btn btn-primary" id="uploadBtn" style="display:none;">
+                    <i class='bx bx-upload'></i> Confirm & Process Upload
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- REQUIREMENTS -->
-    <div class="info-box">
-        <h3>CSV File Schema</h3>
-        <ul>
-            <li><strong>Column 1:</strong> Date (Format: YYYY-MM-DD)</li>
-            <li><strong>Column 2:</strong> Product Name (Text)</li>
-            <li><strong>Column 3:</strong> Quantity (Integer)</li>
-            <li><strong>Column 4:</strong> Unit Price (Decimal)</li>
+    <div class="card">
+        <h3 style="font-family:'Syne',sans-serif; font-size:14px; font-weight:700;">CSV File Schema</h3>
+        <ul class="schema-list">
+            <li><strong>Date</strong> — Format: YYYY-MM-DD</li>
+            <li><strong>Product Name</strong> — Text string</li>
+            <li><strong>Quantity</strong> — Integer value</li>
+            <li><strong>Unit Price</strong> — Decimal (no ₱ symbol in file)</li>
         </ul>
-        <p style="font-size: 10px; color: #888; margin-top: 15px;">
-            * Note: Do not include symbols like '₱' in your price column.
+        <p style="font-size:11px; color:var(--text-muted); margin-top:14px;">
+            Rows already in the database (same product + date) are skipped, not duplicated.
         </p>
     </div>
-
 </div>
 
-<!-- RECENT TABLE -->
-<div class="bottom-data">
-
-    <div class="header">
-        Historical Data Log (Last 10 Entries)
+<div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
+    <div class="table-card-header">
+        <h3>Historical Data Log</h3>
+        <form method="get" class="filter-bar" style="margin-bottom:0;">
+            <select name="month" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Months</option>
+                <option value="1"  {% if selected_month == '1' %}selected{% endif %}>January</option>
+                <option value="2"  {% if selected_month == '2' %}selected{% endif %}>February</option>
+                <option value="3"  {% if selected_month == '3' %}selected{% endif %}>March</option>
+                <option value="4"  {% if selected_month == '4' %}selected{% endif %}>April</option>
+                <option value="5"  {% if selected_month == '5' %}selected{% endif %}>May</option>
+                <option value="6"  {% if selected_month == '6' %}selected{% endif %}>June</option>
+                <option value="7"  {% if selected_month == '7' %}selected{% endif %}>July</option>
+                <option value="8"  {% if selected_month == '8' %}selected{% endif %}>August</option>
+                <option value="9"  {% if selected_month == '9' %}selected{% endif %}>September</option>
+                <option value="10" {% if selected_month == '10' %}selected{% endif %}>October</option>
+                <option value="11" {% if selected_month == '11' %}selected{% endif %}>November</option>
+                <option value="12" {% if selected_month == '12' %}selected{% endif %}>December</option>
+            </select>
+            <select name="year" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Years</option>
+                {% for y in available_years %}
+                <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </form>
     </div>
-
-    <table>
+    <table style="border:none; border-radius:0;">
         <thead>
             <tr>
                 <th>Product Name</th>
@@ -273,9 +212,8 @@ tbody td {
                 <th style="text-align:center;">Date Sold</th>
             </tr>
         </thead>
-
         <tbody>
-            {% for item in sales %}
+            {% for item in sales|slice:":10" %}
             <tr>
                 <td><strong>{{ item.product_name }}</strong></td>
                 <td style="text-align:center;">{{ item.quantity }}</td>
@@ -284,28 +222,24 @@ tbody td {
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="text-align:center; padding:40px; color: #aaa;">
-                    No historical records found in the database.
+                <td colspan="4" style="text-align:center; padding:40px; color:var(--text-dim);">
+                    No historical records found for this filter.
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
 </div>
 
-<!-- JAVASCRIPT FOR UI INTERACTION -->
 <script>
     const fileInput = document.getElementById("fileInput");
-    const fileName = document.getElementById("fileName");
+    const fileName  = document.getElementById("fileName");
     const uploadBtn = document.getElementById("uploadBtn");
 
     fileInput.addEventListener("change", function () {
         if (this.files.length > 0) {
-            // Show the file name to the user
-            fileName.textContent = "✔ Selected: " + this.files[0].name;
-            // Reveal the confirmation button
-            uploadBtn.style.display = "inline-block";
+            fileName.textContent = "✓ Selected: " + this.files[0].name;
+            uploadBtn.style.display = "inline-flex";
         } else {
             fileName.textContent = "";
             uploadBtn.style.display = "none";

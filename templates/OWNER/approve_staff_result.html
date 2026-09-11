@@ -1,0 +1,242 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Activation — CraveCast</title>
+
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+
+    <style>
+    :root[data-theme="dark"] {
+        --bg:            #0b0b13;
+        --surface:       #13131f;
+        --surface2:      #1a1a2b;
+        --border:        rgba(255,255,255,0.07);
+        --text:          #f0f0f8;
+        --text-muted:    #6b7280;
+    }
+    :root {
+        --red:    #ff3d5a;
+        --purple: #8b5cf6;
+        --green:  #22c55e;
+        --amber:  #eab308;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+    </style>
+</head>
+<body>
+
+    <div style="
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 56px 48px;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+        position: relative;
+        overflow: hidden;
+    ">
+
+        <!-- Decorative background ring -->
+        <div style="
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            opacity: 0.04;
+            {% if success %}background: #22c55e;
+            {% elif reason == 'already_used' %}background: #eab308;
+            {% else %}background: #ef4444;{% endif %}
+        "></div>
+
+        <!-- Logo -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom: 28px;">
+            <img src="{% static 'images/logo.png' %}" alt="CraveCast Logo" style="width:32px; height:32px; object-fit:contain; filter: invert(1) brightness(2);">
+            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.3px;">
+                Crave<span style="color:var(--red);">Cast</span>
+            </div>
+        </div>
+
+        {% if success %}
+        <!-- ── SUCCESS STATE ── -->
+        <div style="
+            width: 80px; height: 80px;
+            background: rgba(34,197,94,0.12);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+            border: 2px solid rgba(34,197,94,0.25);
+        ">
+            <i class='bx bx-check-circle' style="font-size: 44px; color: #22c55e;"></i>
+        </div>
+
+        <div style="
+            display: inline-block;
+            background: rgba(34,197,94,0.1);
+            color: #22c55e;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(34,197,94,0.2);
+        ">Activation Successful</div>
+
+        <h2 style="margin: 0 0 12px; font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px;">
+            Account is Now Active
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 36px; line-height: 1.7;">
+            {{ message }}<br>You can now log in to CraveCast.
+        </p>
+
+        <a href="{% url 'login' %}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--purple, #8b5cf6);
+            color: #fff;
+            padding: 13px 30px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            <i class='bx bx-log-in'></i>
+            Go to Login
+        </a>
+
+        {% elif reason == 'already_used' %}
+        <!-- ── ALREADY USED STATE ── -->
+        <div style="
+            width: 80px; height: 80px;
+            background: rgba(234,179,8,0.12);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+            border: 2px solid rgba(234,179,8,0.25);
+        ">
+            <i class='bx bx-info-circle' style="font-size: 44px; color: #eab308;"></i>
+        </div>
+
+        <div style="
+            display: inline-block;
+            background: rgba(234,179,8,0.1);
+            color: #eab308;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(234,179,8,0.2);
+        ">Already Activated</div>
+
+        <h2 style="margin: 0 0 12px; font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px;">
+            Link Already Used
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 36px; line-height: 1.7;">
+            {{ message }}<br>You can log in with your existing password.
+        </p>
+
+        <a href="{% url 'login' %}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2, rgba(255,255,255,0.05));
+            color: var(--text);
+            padding: 13px 30px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+            <i class='bx bx-log-in'></i>
+            Go to Login
+        </a>
+
+        {% else %}
+        <!-- ── INVALID TOKEN STATE ── -->
+        <div style="
+            width: 80px; height: 80px;
+            background: rgba(239,68,68,0.12);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+            border: 2px solid rgba(239,68,68,0.25);
+        ">
+            <i class='bx bx-x-circle' style="font-size: 44px; color: #ef4444;"></i>
+        </div>
+
+        <div style="
+            display: inline-block;
+            background: rgba(239,68,68,0.1);
+            color: #ef4444;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(239,68,68,0.2);
+        ">Invalid Link</div>
+
+        <h2 style="margin: 0 0 12px; font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px;">
+            Link Not Found
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 36px; line-height: 1.7;">
+            {{ message }}<br>Please ask the owner to resend the activation email.
+        </p>
+
+        <a href="{% url 'login' %}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2, rgba(255,255,255,0.05));
+            color: var(--text);
+            padding: 13px 30px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            transition: opacity 0.2s;
+        " onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+            <i class='bx bx-log-in'></i>
+            Go to Login
+        </a>
+
+        {% endif %}
+
+        <!-- Divider -->
+        <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);">
+            <p style="margin: 0; font-size: 12px; color: var(--text-muted); opacity: 0.6;">
+                <i class='bx bx-lock-alt' style="vertical-align: middle; margin-right: 4px;"></i>
+                CraveCast Security — Automated Staff Access Control
+            </p>
+        </div>
+
+    </div>
+</body>
+</html>
