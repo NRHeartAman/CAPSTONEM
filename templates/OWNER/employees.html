@@ -4,8 +4,8 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Employee Profiles</h1>
-        <p>Manage your staff and contract details</p>
+        <h1 data-en="Employee Profiles" data-tl="Mga Profile ng Empleyado">Employee Profiles</h1>
+        <p data-en="Manage your staff and contract details" data-tl="Pamahalaan ang staff at detalye ng kontrata">Manage your staff and contract details</p>
     </div>
 </div>
 
@@ -13,10 +13,10 @@
 <div style="background: var(--amber-dim); border: 1px solid var(--amber); border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
     <span style="font-size: 20px;">⚠️</span>
     <div>
-        <strong style="color: var(--amber); font-size: 13px;">Contract Expiring Soon</strong>
+        <strong style="color: var(--amber); font-size: 13px;" data-en="Contract Expiring Soon" data-tl="Malapit nang Mag-expire ang Kontrata">Contract Expiring Soon</strong>
         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
             {% for emp in expiring %}
-                <strong>{{ emp.full_name|default:emp.username }}</strong> — {{ emp.profile.days_until_expiry }} days left{% if not forloop.last %}, {% endif %}
+                <strong>{{ emp.full_name|default:emp.username }}</strong> — {{ emp.profile.days_until_expiry }} <span data-en="days left" data-tl="araw na lang">days left</span>{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -43,46 +43,46 @@
 
     <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
         <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Email</span>
+            <span style="color: var(--text-muted);" data-en="Email" data-tl="Email">Email</span>
             <span>{{ emp.email|default:"—" }}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Phone</span>
+            <span style="color: var(--text-muted);" data-en="Phone" data-tl="Telepono">Phone</span>
             <span>{{ emp.profile.phone|default:"—" }}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Date Hired</span>
+            <span style="color: var(--text-muted);" data-en="Date Hired" data-tl="Petsa ng Pagkuha">Date Hired</span>
             <span>{{ emp.profile.date_hired|date:"M d, Y"|default:"—" }}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Contract</span>
+            <span style="color: var(--text-muted);" data-en="Contract" data-tl="Kontrata">Contract</span>
             <span>{{ emp.profile.get_contract_type_display }}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-muted);">Contract End</span>
+            <span style="color: var(--text-muted);" data-en="Contract End" data-tl="Katapusan ng Kontrata">Contract End</span>
             <span>{{ emp.profile.contract_end|date:"M d, Y"|default:"Regular" }}</span>
         </div>
     </div>
 
     <div>
         {% if emp.profile.contract_status == 'expiring_soon' %}
-            <span class="badge badge-amber">⚠ Expiring in {{ emp.profile.days_until_expiry }} days</span>
+            <span class="badge badge-amber">⚠ <span data-en="Expiring in {{ emp.profile.days_until_expiry }} days" data-tl="Mag-e-expire sa {{ emp.profile.days_until_expiry }} araw">Expiring in {{ emp.profile.days_until_expiry }} days</span></span>
         {% elif emp.profile.contract_status == 'expired' %}
-            <span class="badge badge-red">✕ Contract Expired</span>
+            <span class="badge badge-red">✕ <span data-en="Contract Expired" data-tl="Nag-expire ang Kontrata">Contract Expired</span></span>
         {% elif emp.profile.contract_status == 'regular' %}
-            <span class="badge badge-green">✓ Regular Employee</span>
+            <span class="badge badge-green">✓ <span data-en="Regular Employee" data-tl="Regular na Empleyado">Regular Employee</span></span>
         {% else %}
-            <span class="badge badge-teal">✓ Active — {{ emp.profile.days_until_expiry }} days left</span>
+            <span class="badge badge-teal">✓ <span data-en="Active — {{ emp.profile.days_until_expiry }} days left" data-tl="Aktibo — {{ emp.profile.days_until_expiry }} araw na lang">Active — {{ emp.profile.days_until_expiry }} days left</span></span>
         {% endif %}
     </div>
 
     <a href="{% url 'employee-edit' emp.pk %}" class="btn btn-ghost" style="width: 100%; justify-content: center;">
-        <i class='bx bx-edit'></i> Edit Profile
+        <i class='bx bx-edit'></i> <span data-en="Edit Profile" data-tl="I-edit ang Profile">Edit Profile</span>
     </a>
 
 </div>
 {% empty %}
-<div style="color: var(--text-dim); font-size: 13px; padding: 40px; text-align: center; grid-column: 1/-1;">
+<div style="color: var(--text-dim); font-size: 13px; padding: 40px; text-align: center; grid-column: 1/-1;" data-en="No staff employees found." data-tl="Walang natagpuang staff.">
     No staff employees found.
 </div>
 {% endfor %}

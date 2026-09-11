@@ -17,12 +17,12 @@ The nav must contain:
     <div style="padding:14px 18px; border-bottom:1px solid var(--border);
                 display:flex; justify-content:space-between; align-items:center;
                 position:sticky; top:0; background:var(--surface);">
-        <span style="font-family:'Syne',sans-serif; font-weight:700; font-size:14px;">🔔 Notifications</span>
+        <span style="font-family:'Syne',sans-serif; font-weight:700; font-size:14px;">🔔 <span data-en="Notifications" data-tl="Mga Notification">Notifications</span></span>
         <button onclick="markAllRead()" style="font-size:11px; color:var(--red);
-                background:none; border:none; cursor:pointer; font-weight:600;">Mark all read</button>
+                background:none; border:none; cursor:pointer; font-weight:600;" data-en="Mark all read" data-tl="Markahang basa na lahat">Mark all read</button>
     </div>
     <div id="notif-list" style="padding:8px 0;">
-        <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">
+        <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;" data-en="Loading..." data-tl="Naglo-load...">
             Loading...
         </div>
     </div>
@@ -66,7 +66,7 @@ function loadNotifications() {
         if (items.length === 0) {
             list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
                                 <i class='bx bx-bell-off' style='font-size:28px;display:block;margin-bottom:8px;'></i>
-                                No notifications
+                                ${notifL("No notifications", "Walang notification")}
                               </div>`;
             return;
         }
@@ -90,12 +90,12 @@ function loadNotifications() {
                 </div>
                 ${!n.is_read ? `<button class="notif-mark-read-btn" data-id="${n.id}"
                     style="font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;
-                           white-space:nowrap;font-weight:600;flex-shrink:0;">Mark read</button>` : ''}
+                           white-space:nowrap;font-weight:600;flex-shrink:0;">${notifL("Mark read", "Markahang basa")}</button>` : ''}
             </div>`).join('');
     })
     .catch(() => {
         list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
-                            Could not load notifications.
+                            ${notifL("Could not load notifications.", "Hindi ma-load ang mga notification.")}
                           </div>`;
     });
 }
@@ -149,13 +149,18 @@ function notifIcon(type) {
     return map[type] || '🔔';
 }
 
+function notifL(en, tl) {
+    return (localStorage.getItem('cc-lang') || 'en') === 'tl' ? tl : en;
+}
+
 function timeAgo(iso) {
     if (!iso) return '';
     const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
-    if (diff < 60)    return `${diff}s ago`;
-    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+    const ago  = notifL('ago', 'nakalipas');
+    if (diff < 60)    return `${diff}s ${ago}`;
+    if (diff < 3600)  return `${Math.floor(diff / 60)}m ${ago}`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ${ago}`;
+    return `${Math.floor(diff / 86400)}d ${ago}`;
 }
 
 function escHtml(str) {

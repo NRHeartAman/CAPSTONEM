@@ -83,19 +83,19 @@
 
 <div class="page-header">
     <div>
-        <h1>Recipes & Inventory Status</h1>
-        <p>Define what each product uses — inventory auto-deducts on every upload</p>
+        <h1 data-en="Recipes &amp; Inventory Status" data-tl="Recipes &amp; Status ng Imbentaryo">Recipes & Inventory Status</h1>
+        <p data-en="Define what each product uses — inventory auto-deducts on every upload" data-tl="Itakda kung ano ang gamit ng bawat produkto — awtomatikong babawasan ang stock sa bawat upload">Define what each product uses — inventory auto-deducts on every upload</p>
     </div>
     <a href="{% url 'recipe_add' %}" class="btn btn-primary">
-        <i class='bx bx-plus'></i> Add Recipe
+        <i class='bx bx-plus'></i> <span data-en="Add Recipe" data-tl="Magdagdag ng Recipe">Add Recipe</span>
     </a>
 </div>
 
 <!-- VIEW TABS -->
 <div class="tab-bar">
-    <button class="tab-btn active-tab" onclick="showTab('recipes', this)">🍵 Recipes</button>
-    <button class="tab-btn"            onclick="showTab('forecast', this)">📦 Inventory</button>
-    <button class="tab-btn"            onclick="showTab('outlook', this)">🔮 Tomorrow's Outlook</button>
+    <button class="tab-btn active-tab" onclick="showTab('recipes', this)">🍵 <span data-en="Recipes" data-tl="Recipes">Recipes</span></button>
+    <button class="tab-btn"            onclick="showTab('forecast', this)">📦 <span data-en="Inventory" data-tl="Imbentaryo">Inventory</span></button>
+    <button class="tab-btn"            onclick="showTab('outlook', this)">🔮 <span data-en="Tomorrow's Outlook" data-tl="Outlook para Bukas">Tomorrow's Outlook</span></button>
 </div>
 
 <!-- ══ RECIPES TAB ══════════════════════════════════════════════════════════ -->
@@ -109,13 +109,13 @@
                 <span class="recipe-title">{{ r.product_name }}</span>
 
                 {% if item.can_make == '—' %}
-                    <span class="can-make-badge can-make-none">— no ingredients</span>
+                    <span class="can-make-badge can-make-none">— <span data-en="no ingredients" data-tl="walang sangkap">no ingredients</span></span>
                 {% elif item.can_make == 0 %}
-                    <span class="can-make-badge can-make-low">⚠ 0 left</span>
+                    <span class="can-make-badge can-make-low">⚠ 0 <span data-en="left" data-tl="natitira">left</span></span>
                 {% elif item.can_make <= 5 %}
-                    <span class="can-make-badge can-make-low">⚠ {{ item.can_make }} left</span>
+                    <span class="can-make-badge can-make-low">⚠ {{ item.can_make }} <span data-en="left" data-tl="natitira">left</span></span>
                 {% else %}
-                    <span class="can-make-badge can-make-ok">✓ {{ item.can_make }} servings</span>
+                    <span class="can-make-badge can-make-ok">✓ {{ item.can_make }} <span data-en="servings" data-tl="serving">servings</span></span>
                 {% endif %}
             </div>
 
@@ -130,26 +130,26 @@
                 </span>
             </div>
             {% empty %}
-            <p style="font-size:12px; color:var(--text-dim); text-align:center; padding:12px 0;">
+            <p style="font-size:12px; color:var(--text-dim); text-align:center; padding:12px 0;" data-en="No ingredients added yet." data-tl="Wala pang sangkap na idinagdag.">
                 No ingredients added yet.
             </p>
             {% endfor %}
 
             {% if item.limiting_item != '—' %}
             <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">
-                ⛓ Key Ingredientk: <strong style="color:var(--red);">{{ item.limiting_item }}</strong>
+                ⛓ <span data-en="Key Ingredient" data-tl="Pangunahing Sangkap">Key Ingredient</span>: <strong style="color:var(--red);">{{ item.limiting_item }}</strong>
             </p>
             {% endif %}
 
             <div class="recipe-actions">
                 <a href="{% url 'recipe_edit' r.pk %}" class="btn btn-ghost btn-sm" style="flex:1; text-align:center;">
-                    <i class='bx bx-edit'></i> Edit
+                    <i class='bx bx-edit'></i> <span data-en="Edit" data-tl="I-edit">Edit</span>
                 </a>
                 <form method="POST" action="{% url 'recipe_delete' r.pk %}" style="flex:1;"
                       onsubmit="return confirm('Delete recipe for {{ r.product_name }}?')">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-ghost btn-sm" style="width:100%; color:var(--red);">
-                        <i class='bx bx-trash'></i> Delete
+                        <i class='bx bx-trash'></i> <span data-en="Delete" data-tl="Burahin">Delete</span>
                     </button>
                 </form>
             </div>
@@ -161,10 +161,10 @@
     {% else %}
     <div class="empty-state">
         <div class="emoji">🍵</div>
-        <p>No recipes defined yet.</p>
-        <p>Add a recipe to connect your products to inventory ingredients.</p>
+        <p data-en="No recipes defined yet." data-tl="Wala pang recipe na naitakda.">No recipes defined yet.</p>
+        <p data-en="Add a recipe to connect your products to inventory ingredients." data-tl="Magdagdag ng recipe para ikonekta ang produkto sa mga sangkap.">Add a recipe to connect your products to inventory ingredients.</p>
         <a href="{% url 'recipe_add' %}" class="btn btn-primary" style="margin-top:16px;">
-            <i class='bx bx-plus'></i> Add First Recipe
+            <i class='bx bx-plus'></i> <span data-en="Add First Recipe" data-tl="Magdagdag ng Unang Recipe">Add First Recipe</span>
         </a>
     </div>
     {% endif %}
@@ -177,10 +177,10 @@
         <table>
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Can Make</th>
-                    <th>Bottleneck Ingredient</th>
-                    <th>Status</th>
+                    <th data-en="Product" data-tl="Produkto">Product</th>
+                    <th data-en="Can Make" data-tl="Kayang Gawin">Can Make</th>
+                    <th data-en="Bottleneck Ingredient" data-tl="Sagabal na Sangkap">Bottleneck Ingredient</th>
+                    <th data-en="Status" data-tl="Katayuan">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -195,7 +195,7 @@
                             {% endif %}>
                             {{ item.can_make }}
                         </span>
-                        <span style="font-size:12px; color:var(--text-muted);"> servings</span>
+                        <span style="font-size:12px; color:var(--text-muted);" data-en="servings" data-tl="serving"> servings</span>
                     </td>
                     <td>
                         {% if item.limiting_item != '—' %}
@@ -206,13 +206,13 @@
                     </td>
                     <td>
                         {% if item.can_make == 0 %}
-                            <span class="badge badge-red">🔴 Out of Stock</span>
+                            <span class="badge badge-red">🔴 <span data-en="Out of Stock" data-tl="Naubos ang Stock">Out of Stock</span></span>
                         {% elif item.can_make <= 5 %}
-                            <span class="badge badge-red">⚠ Critical Low</span>
+                            <span class="badge badge-red">⚠ <span data-en="Critical Low" data-tl="Kritikal na Mababa">Critical Low</span></span>
                         {% elif item.can_make <= 20 %}
-                            <span class="badge" style="background:var(--yellow-dim,#fef3c7); color:#92400e;">⚡ Low</span>
+                            <span class="badge" style="background:var(--yellow-dim,#fef3c7); color:#92400e;">⚡ <span data-en="Low" data-tl="Mababa">Low</span></span>
                         {% else %}
-                            <span class="badge badge-green">✓ Sufficient</span>
+                            <span class="badge badge-green">✓ <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
                         {% endif %}
                     </td>
                 </tr>
@@ -223,14 +223,14 @@
     {% else %}
     <div class="empty-state">
         <div class="emoji">📦</div>
-        <p>Add recipes first to see inventory status.</p>
+        <p data-en="Add recipes first to see inventory status." data-tl="Magdagdag muna ng recipe para makita ang status ng imbentaryo.">Add recipes first to see inventory status.</p>
     </div>
     {% endif %}
 </div>
 
 <!-- ══ TOMORROW'S OUTLOOK TAB ═══════════════════════════════════════════════ -->
 <div id="tab-outlook" style="display:none;">
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;" data-en="Combines the demand forecast with your recipes to project ingredient use for {{ demand_forecast.day_label }}, {{ demand_forecast.target_date|date:'M d' }} — so a predicted sales spike shows up here before it becomes a stockout." data-tl="Pinagsasama ang demand forecast at recipes para tantiyahin ang gamit ng sangkap para sa {{ demand_forecast.day_label }}, {{ demand_forecast.target_date|date:'M d' }} — para makita rito ang inaasahang pagtaas ng benta bago maubos ang stock.">
         Combines the demand forecast with your recipes to project ingredient use for
         <strong>{{ demand_forecast.day_label }}, {{ demand_forecast.target_date|date:"M d" }}</strong>
         — so a predicted sales spike shows up here before it becomes a stockout.
@@ -239,19 +239,19 @@
     {% if not demand_forecast.has_enough_data %}
     <div class="empty-state">
         <div class="emoji">🔮</div>
-        <p>Not enough sales history yet to forecast tomorrow's ingredient needs.</p>
-        <p>Upload at least 5 days of sales data to enable this.</p>
+        <p data-en="Not enough sales history yet to forecast tomorrow's ingredient needs." data-tl="Wala pang sapat na kasaysayan ng benta para tantiyahin ang kailangan bukas.">Not enough sales history yet to forecast tomorrow's ingredient needs.</p>
+        <p data-en="Upload at least 5 days of sales data to enable this." data-tl="Mag-upload ng kahit 5 araw na sales data para paganahin ito.">Upload at least 5 days of sales data to enable this.</p>
     </div>
     {% elif demand_forecast.items %}
     <div class="forecast-table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Ingredient</th>
-                    <th>Current Stock</th>
-                    <th>Predicted Use</th>
-                    <th>Remaining After</th>
-                    <th>Status</th>
+                    <th data-en="Ingredient" data-tl="Sangkap">Ingredient</th>
+                    <th data-en="Current Stock" data-tl="Kasalukuyang Stock">Current Stock</th>
+                    <th data-en="Predicted Use" data-tl="Inaasahang Gamit">Predicted Use</th>
+                    <th data-en="Remaining After" data-tl="Matitira Pagkatapos">Remaining After</th>
+                    <th data-en="Status" data-tl="Katayuan">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -271,11 +271,11 @@
                     </td>
                     <td>
                         {% if item.status == 'out' %}
-                            <span class="badge badge-red">🔴 Will Run Out</span>
+                            <span class="badge badge-red">🔴 <span data-en="Will Run Out" data-tl="Maubos">Will Run Out</span></span>
                         {% elif item.status == 'low' %}
-                            <span class="badge badge-red">⚠ Will Be Low</span>
+                            <span class="badge badge-red">⚠ <span data-en="Will Be Low" data-tl="Mauubusan">Will Be Low</span></span>
                         {% else %}
-                            <span class="badge badge-green">✓ Sufficient</span>
+                            <span class="badge badge-green">✓ <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
                         {% endif %}
                     </td>
                 </tr>

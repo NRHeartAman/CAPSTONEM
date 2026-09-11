@@ -169,34 +169,34 @@
 
 <div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Staff Dashboard</h1>
-        <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 14px;">Real-time inventory logging and shift daily preparation controls</p>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;" data-en="Staff Dashboard" data-tl="Dashboard ng Staff">Staff Dashboard</h1>
+        <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 14px;" data-en="Real-time inventory logging and shift daily preparation controls" data-tl="Real-time na pag-log ng imbentaryo at pang-araw-araw na paghahanda">Real-time inventory logging and shift daily preparation controls</p>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card teal">
-        <div class="stat-label">Total Items Tracked</div>
+        <div class="stat-label" data-en="Total Items Tracked" data-tl="Kabuuang Naka-track na Item">Total Items Tracked</div>
         <div class="stat-value">{{ total_items|default:0|intcomma }}</div>
-        <div class="stat-sub">Inventory records</div>
+        <div class="stat-sub" data-en="Inventory records" data-tl="Rekord ng imbentaryo">Inventory records</div>
     </div>
     <div class="stat-card red"
          {% if low_stock_items %}
          title="Low stock:&#10;{% for item in low_stock_items %}{{ item.item_name }} — {{ item.stock_qty|floatformat:0 }} {{ item.unit }}&#10;{% endfor %}{% if low_stock_count > 5 %}+{{ low_stock_count|add:"-5" }} more&#10;{% endif %}"
          {% endif %}>
-        <div class="stat-label">Low Stock Alerts <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
+        <div class="stat-label"><span data-en="Low Stock Alerts" data-tl="Mababang Stock na Alerto">Low Stock Alerts</span> <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
         <div class="stat-value">{{ low_stock_count|default:0|intcomma }}</div>
-        <div class="stat-sub">Items below critical point</div>
+        <div class="stat-sub" data-en="Items below critical point" data-tl="Mga item na mababa sa kritikal na antas">Items below critical point</div>
     </div>
     <div class="stat-card blue">
-        <div class="stat-label">Ingredients (Stock)</div>
+        <div class="stat-label" data-en="Ingredients (Stock)" data-tl="Sangkap (Stock)">Ingredients (Stock)</div>
         <div class="stat-value">{{ ingredient_count|default:0 }}</div>
-        <div class="stat-sub">Active raw materials</div>
+        <div class="stat-sub" data-en="Active raw materials" data-tl="Aktibong hilaw na materyales">Active raw materials</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-label">Supplies Storage</div>
+        <div class="stat-label" data-en="Supplies Storage" data-tl="Imbakan ng Suplay">Supplies Storage</div>
         <div class="stat-value">{{ supply_count|default:0 }}</div>
-        <div class="stat-sub">Packaging items</div>
+        <div class="stat-sub" data-en="Packaging items" data-tl="Mga item na pambalot">Packaging items</div>
     </div>
 </div>
 
@@ -206,8 +206,8 @@
             <i class='bx bx-package'></i>
         </div>
         <div>
-            <div class="quick-nav-label">Inventory Matrix</div>
-            <div class="quick-nav-sub">Update stock status</div>
+            <div class="quick-nav-label" data-en="Inventory Matrix" data-tl="Inventory Matrix">Inventory Matrix</div>
+            <div class="quick-nav-sub" data-en="Update stock status" data-tl="I-update ang status ng stock">Update stock status</div>
         </div>
     </a>
     <a href="{% url 'view-forecast' %}" class="quick-nav-card">
@@ -215,8 +215,8 @@
             <i class='bx bx-analyse'></i>
         </div>
         <div>
-            <div class="quick-nav-label">Demand Forecast</div>
-            <div class="quick-nav-sub">Check predictive needs</div>
+            <div class="quick-nav-label" data-en="Demand Forecast" data-tl="Demand Forecast">Demand Forecast</div>
+            <div class="quick-nav-sub" data-en="Check predictive needs" data-tl="Tingnan ang inaasahang pangangailangan">Check predictive needs</div>
         </div>
     </a>
     <a href="{% url 'view-events' %}" class="quick-nav-card">
@@ -224,8 +224,8 @@
             <i class='bx bx-calendar'></i>
         </div>
         <div>
-            <div class="quick-nav-label">Local Events</div>
-            <div class="quick-nav-sub">Promos &amp; holiday tracking</div>
+            <div class="quick-nav-label" data-en="Local Events" data-tl="Mga Lokal na Event">Local Events</div>
+            <div class="quick-nav-sub" data-en="Promos &amp; holiday tracking" data-tl="Mga promo &amp; holiday">Promos &amp; holiday tracking</div>
         </div>
     </a>
 </div>
@@ -237,15 +237,15 @@
 
         <div class="section-card" style="padding:0; overflow:hidden;">
             <div class="section-card-header" style="padding: 18px 24px; margin-bottom: 0;">
-                <h3><i class='bx bx-error-circle' style="color: var(--red);"></i> Critical Stock Warnings</h3>
-                <span class="badge badge-red" style="font-weight: 700;">{{ low_stock_count|default:0 }} Action Required</span>
+                <h3><i class='bx bx-error-circle' style="color: var(--red);"></i> <span data-en="Critical Stock Warnings" data-tl="Kritikal na Babala sa Stock">Critical Stock Warnings</span></h3>
+                <span class="badge badge-red" style="font-weight: 700;">{{ low_stock_count|default:0 }} <span data-en="Action Required" data-tl="Kailangan ng Aksyon">Action Required</span></span>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Item Description</th>
-                        <th>Current Stock Volume</th>
-                        <th style="text-align: center;">Priority Dispatch</th>
+                        <th data-en="Item Description" data-tl="Deskripsyon ng Item">Item Description</th>
+                        <th data-en="Current Stock Volume" data-tl="Kasalukuyang Dami ng Stock">Current Stock Volume</th>
+                        <th style="text-align: center;" data-en="Priority Dispatch" data-tl="Priyoridad">Priority Dispatch</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -255,9 +255,9 @@
                         <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
                         <td style="text-align: center;">
                             {% if item.stock_qty <= 5 %}
-                                <span class="badge badge-red" style="font-size: 11px;">Critical Fill</span>
+                                <span class="badge badge-red" style="font-size: 11px;" data-en="Critical Fill" data-tl="Kritikal">Critical Fill</span>
                             {% else %}
-                                <span class="badge badge-amber" style="font-size: 11px;">Low Stock</span>
+                                <span class="badge badge-amber" style="font-size: 11px;" data-en="Low Stock" data-tl="Mababang Stock">Low Stock</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -265,7 +265,7 @@
                     <tr>
                         <td colspan="3" style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px;">
                             <i class='bx bx-check-shield' style="font-size: 28px; display: block; margin-bottom: 8px; color: var(--green); opacity: 0.6;"></i>
-                            All raw materials are safely above system thresholds.
+                            <span data-en="All raw materials are safely above system thresholds." data-tl="Ligtas ang lahat ng hilaw na materyales sa itinakdang threshold.">All raw materials are safely above system thresholds.</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -275,18 +275,18 @@
 
         <div class="section-card" style="padding:0; overflow:hidden;">
             <div class="section-card-header" style="padding: 18px 24px; margin-bottom: 0;">
-                <h3><i class='bx bx-package'></i> Stock Registry Status</h3>
+                <h3><i class='bx bx-package'></i> <span data-en="Stock Registry Status" data-tl="Status ng Rehistro ng Stock">Stock Registry Status</span></h3>
                 <a href="{% url 'view-inventory' %}" class="btn btn-ghost" style="padding: 6px 12px; font-size:12px; font-weight: 600;">
-                    View Master Board <i class='bx bx-arrow-right' style="margin-left: 4px;"></i>
+                    <span data-en="View Master Board" data-tl="Tingnan ang Master Board">View Master Board</span> <i class='bx bx-arrow-right' style="margin-left: 4px;"></i>
                 </a>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Item Description</th>
-                        <th>Category Group</th>
-                        <th>Current Volume</th>
-                        <th style="text-align: center;">Condition State</th>
+                        <th data-en="Item Description" data-tl="Deskripsyon ng Item">Item Description</th>
+                        <th data-en="Category Group" data-tl="Kategorya">Category Group</th>
+                        <th data-en="Current Volume" data-tl="Kasalukuyang Dami">Current Volume</th>
+                        <th style="text-align: center;" data-en="Condition State" data-tl="Kalagayan">Condition State</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -295,23 +295,23 @@
                         <td><strong style="color: var(--text);">{{ item.item_name }}</strong></td>
                         <td>
                             {% if item.category == 'Stock' %}
-                                <span class="badge badge-teal" style="font-size: 11px; font-weight: 600;">Ingredient</span>
+                                <span class="badge badge-teal" style="font-size: 11px; font-weight: 600;" data-en="Ingredient" data-tl="Sangkap">Ingredient</span>
                             {% else %}
-                                <span class="badge badge-blue" style="font-size: 11px; font-weight: 600;">Supply</span>
+                                <span class="badge badge-blue" style="font-size: 11px; font-weight: 600;" data-en="Supply" data-tl="Suplay">Supply</span>
                             {% endif %}
                         </td>
                         <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
                         <td style="text-align: center;">
                             {% if item.stock_qty <= item.restock_threshold %}
-                                <span class="badge badge-red" style="font-size: 11px;">Restock Now</span>
+                                <span class="badge badge-red" style="font-size: 11px;" data-en="Restock Now" data-tl="Mag-restock Na">Restock Now</span>
                             {% else %}
-                                <span class="badge badge-green" style="font-size: 11px;">Stable</span>
+                                <span class="badge badge-green" style="font-size: 11px;" data-en="Stable" data-tl="Stable">Stable</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px;">
+                        <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px;" data-en="No logged inventory elements detected in local node." data-tl="Walang naitalang imbentaryo.">
                             No logged inventory elements detected in local node.
                         </td>
                     </tr>
@@ -327,22 +327,22 @@
 
         <div class="section-card">
             <div class="section-card-header">
-                <h3><i class='bx bx-bar-chart-alt-2'></i> Best-Selling Variants</h3>
-                <span class="badge badge-purple" style="font-size: 11px;">Top Items</span>
+                <h3><i class='bx bx-bar-chart-alt-2'></i> <span data-en="Best-Selling Variants" data-tl="Pinakabenta na Variant">Best-Selling Variants</span></h3>
+                <span class="badge badge-purple" style="font-size: 11px;" data-en="Top Items" data-tl="Nangungunang Item">Top Items</span>
             </div>
             <div class="bar-chart-container">
                 {% for item in best_sellers %}
                 <div class="chart-row">
                     <div class="chart-info">
                         <span class="chart-label">{{ item.name }}</span>
-                        <span class="chart-value">{{ item.qty }} Units Sold This Month</span>
+                        <span class="chart-value">{{ item.qty }} <span data-en="Units Sold This Month" data-tl="Naibentang Units Ngayong Buwan">Units Sold This Month</span></span>
                     </div>
                     <div class="chart-bar-bg">
                         <div class="chart-bar-fill" style="width: {{ item.percentage }}%;"></div>
                     </div>
                 </div>
                 {% empty %}
-                <p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">
+                <p style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;" data-en="No metrics compiled. Upload core data arrays to populate chart paths." data-tl="Walang datos pa. Mag-upload ng sales data para makita ang chart.">
                     No metrics compiled. Upload core data arrays to populate chart paths.
                 </p>
                 {% endfor %}
@@ -352,9 +352,9 @@
         <!-- OPERATIONAL DAILY PREP GUIDE MODULE -->
         <div class="section-card">
             <div class="section-card-header">
-                <h3><i class='bx bx-notepad'></i> Shift Daily Prep Guide</h3>
+                <h3><i class='bx bx-notepad'></i> <span data-en="Shift Daily Prep Guide" data-tl="Gabay sa Pang-araw-araw na Paghahanda">Shift Daily Prep Guide</span></h3>
                 <span class="badge badge-blue" style="font-size: 11px;" id="prep-counter">
-                    {{ prep_done_count }}/{{ prep_total_count }} Done
+                    {{ prep_done_count }}/{{ prep_total_count }} <span data-en="Done" data-tl="Tapos na">Done</span>
                 </span>
             </div>
 
@@ -380,10 +380,10 @@
                             <span style="font-size:10px;color:var(--text-muted);font-style:italic;margin-top:3px;display:block;">
                                 {% if task.source == 'low_stock' %}
                                     <i class='bx bx-error-circle' style="font-size:10px;color:var(--red);"></i>
-                                    Auto: Low stock — {{ task.linked_item }}
+                                    <span data-en="Auto: Low stock" data-tl="Auto: Mababang stock">Auto: Low stock</span> — {{ task.linked_item }}
                                 {% elif task.source == 'best_seller' %}
                                     <i class='bx bx-bar-chart-alt-2' style="font-size:10px;color:var(--purple);"></i>
-                                    Auto: Top seller
+                                    <span data-en="Auto: Top seller" data-tl="Auto: Pinakabenta">Auto: Top seller</span>
                                 {% endif %}
                             </span>
                             {% endif %}
@@ -398,7 +398,7 @@
             {% else %}
             <p style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px;">
                 <i class='bx bx-check-circle' style="font-size:24px;display:block;margin-bottom:8px;color:var(--green);"></i>
-                No prep tasks for today.
+                <span data-en="No prep tasks for today." data-tl="Walang gawaing paghahanda ngayon.">No prep tasks for today.</span>
             </p>
             {% endif %}
         </div>
@@ -439,7 +439,8 @@
         const items = document.querySelectorAll('#prepList .prep-item');
         const done  = [...items].filter(el => el.style.opacity === '0.5').length;
         const counter = document.getElementById('prep-counter');
-        if (counter) counter.textContent = done + '/' + items.length + ' Done';
+        const doneLabel = (localStorage.getItem('cc-lang') || 'en') === 'tl' ? 'Tapos na' : 'Done';
+        if (counter) counter.textContent = done + '/' + items.length + ' ' + doneLabel;
     }
 </script>
 {% endblock %}

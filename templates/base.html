@@ -291,6 +291,25 @@
 
     #theme-toggle:hover { background: var(--surface3); color: var(--amber); }
 
+    #lang-toggle {
+        height: 36px;
+        padding: 0 11px;
+        border-radius: 9px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-family: 'Syne', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+    }
+    #lang-toggle:hover { background: var(--surface3); color: var(--text); }
+
     .notif-dot {
         position: absolute;
         top: 7px; right: 8px;
@@ -668,53 +687,53 @@
         <div class="logo-wordmark">Crave<span>Cast</span></div>
     </a>
 
-    <div class="nav-section">Main</div>
+    <div class="nav-section" data-en="Main" data-tl="Pangunahin">Main</div>
     <ul>
         <li class="{% if request.resolver_match.url_name == 'owner-dashboard' or request.resolver_match.url_name == 'staff-dashboard' %}active{% endif %}">
             <a href="{% if request.user.role == 'OWNER' %}{% url 'owner-dashboard' %}{% else %}{% url 'staff-dashboard' %}{% endif %}">
-                <i class='bx bxs-dashboard'></i><span>Dashboard</span>
+                <i class='bx bxs-dashboard'></i><span data-en="Dashboard" data-tl="Dashboard">Dashboard</span>
             </a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-inventory' %}active{% endif %}">
-            <a href="{% url 'view-inventory' %}"><i class='bx bx-package'></i><span>Inventory</span></a>
+            <a href="{% url 'view-inventory' %}"><i class='bx bx-package'></i><span data-en="Inventory" data-tl="Imbentaryo">Inventory</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'recipe_list' or request.resolver_match.url_name == 'recipe_add' or request.resolver_match.url_name == 'recipe_edit' %}active{% endif %}">
-            <a href="{% url 'recipe_list' %}"><i class='bx bx-food-menu'></i><span>Recipes</span></a>
+            <a href="{% url 'recipe_list' %}"><i class='bx bx-food-menu'></i><span data-en="Recipes" data-tl="Recipes">Recipes</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-forecast' %}active{% endif %}">
-            <a href="{% url 'view-forecast' %}"><i class='bx bx-analyse'></i><span>Forecast</span></a>
+            <a href="{% url 'view-forecast' %}"><i class='bx bx-analyse'></i><span data-en="Forecast" data-tl="Forecast">Forecast</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-events' %}active{% endif %}">
-            <a href="{% url 'view-events' %}"><i class='bx bx-calendar'></i><span>Events</span></a>
+            <a href="{% url 'view-events' %}"><i class='bx bx-calendar'></i><span data-en="Events" data-tl="Mga Event">Events</span></a>
         </li>
 
         {% if request.user.role == "OWNER" %}
-        <div class="nav-section">Owner</div>
+        <div class="nav-section" data-en="Owner" data-tl="Owner">Owner</div>
         <li class="{% if request.resolver_match.url_name == 'view-approvals' %}active{% endif %}">
             <a href="{% url 'view-approvals' %}">
                 <i class='bx bx-check-shield'></i>
-                <span>Approvals</span>
+                <span data-en="Approvals" data-tl="Mga Aprubasyon">Approvals</span>
                 {% if pending_approval_count %}<span class="nav-badge">{{ pending_approval_count }}</span>{% endif %}
             </a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-upload-data' %}active{% endif %}">
-            <a href="{% url 'view-upload-data' %}"><i class='bx bx-cloud-upload'></i><span>Upload Data & Sales</span></a>
+            <a href="{% url 'view-upload-data' %}"><i class='bx bx-cloud-upload'></i><span data-en="Upload Data &amp; Sales" data-tl="I-upload ang Datos ng Benta">Upload Data &amp; Sales</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'admin-management' %}active{% endif %}">
-            <a href="{% url 'admin-management' %}"><i class='bx bx-shield-quarter'></i><span>Admin &amp; Login</span></a>
+            <a href="{% url 'admin-management' %}"><i class='bx bx-shield-quarter'></i><span data-en="Admin &amp; Login" data-tl="Admin at Login">Admin &amp; Login</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-employees' or request.resolver_match.url_name == 'employee-edit' %}active{% endif %}">
-            <a href="{% url 'view-employees' %}"><i class='bx bx-group'></i><span>Employees</span></a>
+            <a href="{% url 'view-employees' %}"><i class='bx bx-group'></i><span data-en="Employees" data-tl="Mga Empleyado">Employees</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-settings' %}active{% endif %}">
-            <a href="{% url 'view-settings' %}"><i class='bx bx-cog'></i><span>Settings</span></a>
+            <a href="{% url 'view-settings' %}"><i class='bx bx-cog'></i><span data-en="Settings" data-tl="Mga Setting">Settings</span></a>
         </li>
         {% endif %}
     </ul>
 
     <div class="sidebar-footer">
         <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-            <i class='bx bx-log-out-circle'></i><span>Logout</span>
+            <i class='bx bx-log-out-circle'></i><span data-en="Logout" data-tl="Mag-logout">Logout</span>
         </a>
     </div>
 </div>
@@ -732,6 +751,9 @@
             <div class="nav-clock">
                 <div class="clock-time" id="clock-time">--:--:--</div>
                 <div class="clock-date" id="clock-date">--- --, ----</div>
+            </div>
+            <div id="lang-toggle" title="Switch language / Palitan ang wika">
+                <span id="lang-label">EN</span>
             </div>
             <div id="theme-toggle" title="Toggle light/dark mode">
                 <i class='bx bx-moon' id="theme-icon"></i>
@@ -842,6 +864,34 @@ function applyTheme(theme) {
 document.getElementById('theme-toggle').addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
     applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+/* ── LANGUAGE TOGGLE (EN / TL) — same storage key as login.html,
+      so the choice made at sign-in carries through the whole system ── */
+function applyLang(lang) {
+    document.querySelectorAll('[data-en]').forEach(function (el) {
+        el.textContent = lang === 'tl' ? el.getAttribute('data-tl') : el.getAttribute('data-en');
+    });
+    document.querySelectorAll('[data-en-placeholder]').forEach(function (el) {
+        el.setAttribute('placeholder', lang === 'tl'
+            ? el.getAttribute('data-tl-placeholder')
+            : el.getAttribute('data-en-placeholder'));
+    });
+    document.querySelectorAll('[data-en-title]').forEach(function (el) {
+        el.setAttribute('title', lang === 'tl'
+            ? el.getAttribute('data-tl-title')
+            : el.getAttribute('data-en-title'));
+    });
+    const label = document.getElementById('lang-label');
+    if (label) label.textContent = lang === 'tl' ? 'TL' : 'EN';
+    document.documentElement.setAttribute('lang', lang === 'tl' ? 'fil' : 'en');
+    localStorage.setItem('cc-lang', lang);
+}
+
+applyLang(localStorage.getItem('cc-lang') || 'en');
+
+document.getElementById('lang-toggle').addEventListener('click', () => {
+    applyLang((localStorage.getItem('cc-lang') || 'en') === 'en' ? 'tl' : 'en');
 });
 
 /* ── TOAST SYSTEM (single source of truth) ───────────── */

@@ -167,17 +167,17 @@
 
 <div class="page-header">
     <div>
-        <h1>Events & Promos</h1>
-        <p>Manage upcoming store activities and marketing campaigns</p>
+        <h1 data-en="Events &amp; Promos" data-tl="Mga Event &amp; Promo">Events & Promos</h1>
+        <p data-en="Manage upcoming store activities and marketing campaigns" data-tl="Pamahalaan ang mga paparating na event at kampanya">Manage upcoming store activities and marketing campaigns</p>
     </div>
 
     {% if not read_only %}
         <button class="btn btn-primary" onclick="openModal('eventModal')">
-            <i class='bx bx-plus'></i> Add New Event
+            <i class='bx bx-plus'></i> <span data-en="Add New Event" data-tl="Magdagdag ng Event">Add New Event</span>
         </button>
     {% else %}
         <button class="btn btn-primary" onclick="openModal('staffEventModal')">
-            <i class='bx bx-send'></i> Request New Event
+            <i class='bx bx-send'></i> <span data-en="Request New Event" data-tl="Humiling ng Event">Request New Event</span>
         </button>
     {% endif %}
 </div>
@@ -185,7 +185,7 @@
 <!-- TAB BAR -->
 <div class="tab-bar">
     <button class="tab-btn active" id="tab-upcoming" onclick="switchTab('upcoming')">
-        🗓️ Upcoming
+        🗓️ <span data-en="Upcoming" data-tl="Paparating">Upcoming</span>
         {% if upcoming %}
             <span style="margin-left:6px;background:rgba(255,255,255,0.15);
                          padding:1px 7px;border-radius:20px;font-size:11px;">
@@ -194,7 +194,7 @@
         {% endif %}
     </button>
     <button class="tab-btn" id="tab-archived" onclick="switchTab('archived')">
-        📦 Archive
+        📦 <span data-en="Archive" data-tl="Archive">Archive</span>
         {% if archived %}
             <span style="margin-left:6px;background:rgba(255,255,255,0.15);
                          padding:1px 7px;border-radius:20px;font-size:11px;">
@@ -210,11 +210,11 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 28%;">Event / Promo</th>
-                    <th style="width: 18%;">Target Date</th>
-                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};">Description</th>
+                    <th style="width: 28%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
+                    <th style="width: 18%;" data-en="Target Date" data-tl="Petsa">Target Date</th>
+                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
                     {% if not read_only %}
-                    <th style="width: 14%; text-align:center;">Action</th>
+                    <th style="width: 14%; text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
                     {% endif %}
                 </tr>
             </thead>
@@ -225,10 +225,10 @@
                     <td>
                         <span class="date-pill">📅 {{ event.event_date }}</span>
                     </td>
-                    <td><span class="event-desc">{{ event.description|default:"No description provided." }}</span></td>
+                    <td><span class="event-desc" data-en="{{ event.description|default:'No description provided.' }}" data-tl="{% if event.description %}{{ event.description }}{% else %}Walang deskripsyon.{% endif %}">{{ event.description|default:"No description provided." }}</span></td>
                     {% if not read_only %}
                     <td style="text-align:center;">
-                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-archive">
+                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-archive" data-en="Archive" data-tl="I-archive">
                             Archive
                         </a>
                     </td>
@@ -239,11 +239,13 @@
                     <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
                         <div class="empty-events">
                             <div class="icon">🗓️</div>
-                            <p>No upcoming events or promos recorded.<br>
+                            <p>
                             {% if not read_only %}
-                                Add your first one to get started.
+                                <span data-en="No upcoming events or promos recorded." data-tl="Walang naitalang paparating na event o promo.">No upcoming events or promos recorded.</span><br>
+                                <span data-en="Add your first one to get started." data-tl="Magdagdag ng una para magsimula.">Add your first one to get started.</span>
                             {% else %}
-                                Submit a request and the owner will review it.
+                                <span data-en="No upcoming events or promos recorded." data-tl="Walang naitalang paparating na event o promo.">No upcoming events or promos recorded.</span><br>
+                                <span data-en="Submit a request and the owner will review it." data-tl="Magsumite ng hiling at susuriin ito ng owner.">Submit a request and the owner will review it.</span>
                             {% endif %}
                             </p>
                         </div>
@@ -261,11 +263,11 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 28%;">Event / Promo</th>
-                    <th style="width: 18%;">Date</th>
-                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};">Description</th>
+                    <th style="width: 28%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
+                    <th style="width: 18%;" data-en="Date" data-tl="Petsa">Date</th>
+                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
                     {% if not read_only %}
-                    <th style="width: 14%; text-align:center;">Action</th>
+                    <th style="width: 14%; text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
                     {% endif %}
                 </tr>
             </thead>
@@ -276,10 +278,10 @@
                     <td>
                         <span class="done-pill">✓ {{ event.event_date }}</span>
                     </td>
-                    <td><span class="event-desc">{{ event.description|default:"No description provided." }}</span></td>
+                    <td><span class="event-desc" data-en="{{ event.description|default:'No description provided.' }}" data-tl="{% if event.description %}{{ event.description }}{% else %}Walang deskripsyon.{% endif %}">{{ event.description|default:"No description provided." }}</span></td>
                     {% if not read_only %}
                     <td style="text-align:center;">
-                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-restore">
+                        <a href="{% url 'toggle-archive-event' event.pk %}" class="btn-restore" data-en="Restore" data-tl="Ibalik">
                             Restore
                         </a>
                     </td>
@@ -290,8 +292,8 @@
                     <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
                         <div class="empty-events">
                             <div class="icon">📦</div>
-                            <p>No archived events yet.<br>
-                            Past events are automatically moved here.</p>
+                            <p><span data-en="No archived events yet." data-tl="Wala pang naka-archive na event.">No archived events yet.</span><br>
+                            <span data-en="Past events are automatically moved here." data-tl="Awtomatikong dinadala rito ang mga naganap na event.">Past events are automatically moved here.</span></p>
                         </div>
                     </td>
                 </tr>
@@ -305,17 +307,17 @@
 {% if read_only and my_event_requests %}
 <div class="request-card">
     <div class="request-card-header">
-        <h3>My Event Requests</h3>
-        <span class="badge badge-blue">{{ my_event_requests|length }} submitted</span>
+        <h3 data-en="My Event Requests" data-tl="Aking mga Hiling sa Event">My Event Requests</h3>
+        <span class="badge badge-blue">{{ my_event_requests|length }} <span data-en="submitted" data-tl="isinumite">submitted</span></span>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Event Name</th>
-                <th>Event Date</th>
-                <th>Description</th>
-                <th style="text-align:center;">Status</th>
-                <th style="text-align:center;">Submitted</th>
+                <th data-en="Event Name" data-tl="Pangalan ng Event">Event Name</th>
+                <th data-en="Event Date" data-tl="Petsa ng Event">Event Date</th>
+                <th data-en="Description" data-tl="Deskripsyon">Description</th>
+                <th style="text-align:center;" data-en="Status" data-tl="Katayuan">Status</th>
+                <th style="text-align:center;" data-en="Submitted" data-tl="Isinumite">Submitted</th>
             </tr>
         </thead>
         <tbody>
@@ -328,11 +330,11 @@
                 <td><span class="event-desc">{{ req.description|default:"—" }}</span></td>
                 <td style="text-align:center;">
                     {% if req.status == 'pending' %}
-                        <span class="badge badge-amber">⏳ Pending</span>
+                        <span class="badge badge-amber">⏳ <span data-en="Pending" data-tl="Naghihintay">Pending</span></span>
                     {% elif req.status == 'approved' %}
-                        <span class="badge badge-green">✓ Approved</span>
+                        <span class="badge badge-green">✓ <span data-en="Approved" data-tl="Inaprubahan">Approved</span></span>
                     {% else %}
-                        <span class="badge badge-red">✕ Rejected</span>
+                        <span class="badge badge-red">✕ <span data-en="Rejected" data-tl="Tinanggihan">Rejected</span></span>
                     {% endif %}
                 </td>
                 <td style="text-align:center; color:var(--text-muted); font-size:13px;">
@@ -349,28 +351,28 @@
 {% if not read_only %}
 <div id="eventModal" class="modal">
     <div class="modal-box">
-        <h2>Create Event / Promo</h2>
+        <h2 data-en="Create Event / Promo" data-tl="Gumawa ng Event / Promo">Create Event / Promo</h2>
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label>Event / Promo Name</label>
-                <input type="text" name="event_name" required placeholder="e.g. Buy 1 Take 1 Monday">
+                <label data-en="Event / Promo Name" data-tl="Pangalan ng Event / Promo">Event / Promo Name</label>
+                <input type="text" name="event_name" required data-en-placeholder="e.g. Buy 1 Take 1 Monday" data-tl-placeholder="hal. Buy 1 Take 1 Monday" placeholder="e.g. Buy 1 Take 1 Monday">
             </div>
             <div class="form-group">
-                <label>Event Date</label>
+                <label data-en="Event Date" data-tl="Petsa ng Event">Event Date</label>
                 <input type="date" name="event_date" required>
             </div>
             <div class="form-group">
-                <label>Description (Optional)</label>
+                <label data-en="Description (Optional)" data-tl="Deskripsyon (Opsyonal)">Description (Optional)</label>
                 <textarea name="description" style="height: 90px; resize: none;"
-                    placeholder="Describe the promo mechanics..."></textarea>
+                    data-en-placeholder="Describe the promo mechanics..." data-tl-placeholder="Ilarawan ang mekanismo ng promo..." placeholder="Describe the promo mechanics..."></textarea>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 24px;">
                 <button type="submit" class="btn btn-primary" style="flex: 1;">
-                    <i class='bx bx-save'></i> Save Event
+                    <i class='bx bx-save'></i> <span data-en="Save Event" data-tl="I-save ang Event">Save Event</span>
                 </button>
                 <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="closeModal('eventModal')">
-                    Cancel
+                    <span data-en="Cancel" data-tl="Kanselahin">Cancel</span>
                 </button>
             </div>
         </form>
@@ -382,31 +384,31 @@
 {% if read_only %}
 <div id="staffEventModal" class="modal">
     <div class="modal-box">
-        <h2>Request New Event</h2>
-        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; margin-top:-12px;">
+        <h2 data-en="Request New Event" data-tl="Humiling ng Bagong Event">Request New Event</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px; margin-top:-12px;" data-en="Your request will be reviewed by the owner before being published." data-tl="Susuriin muna ng owner ang iyong hiling bago ito i-publish.">
             Your request will be reviewed by the owner before being published.
         </p>
         <form method="POST" action="{% url 'staff-event-request' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label>Event / Promo Name</label>
-                <input type="text" name="event_name" required placeholder="e.g. Buy 1 Take 1 Monday">
+                <label data-en="Event / Promo Name" data-tl="Pangalan ng Event / Promo">Event / Promo Name</label>
+                <input type="text" name="event_name" required data-en-placeholder="e.g. Buy 1 Take 1 Monday" data-tl-placeholder="hal. Buy 1 Take 1 Monday" placeholder="e.g. Buy 1 Take 1 Monday">
             </div>
             <div class="form-group">
-                <label>Event Date</label>
+                <label data-en="Event Date" data-tl="Petsa ng Event">Event Date</label>
                 <input type="date" name="event_date" required>
             </div>
             <div class="form-group">
-                <label>Description (Optional)</label>
+                <label data-en="Description (Optional)" data-tl="Deskripsyon (Opsyonal)">Description (Optional)</label>
                 <textarea name="description" style="height: 90px; resize: none;"
-                    placeholder="Describe the promo mechanics..."></textarea>
+                    data-en-placeholder="Describe the promo mechanics..." data-tl-placeholder="Ilarawan ang mekanismo ng promo..." placeholder="Describe the promo mechanics..."></textarea>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 24px;">
                 <button type="submit" class="btn btn-primary" style="flex: 1;">
-                    <i class='bx bx-send'></i> Submit Request
+                    <i class='bx bx-send'></i> <span data-en="Submit Request" data-tl="Isumite ang Hiling">Submit Request</span>
                 </button>
                 <button type="button" class="btn btn-ghost" style="flex: 1;" onclick="closeModal('staffEventModal')">
-                    Cancel
+                    <span data-en="Cancel" data-tl="Kanselahin">Cancel</span>
                 </button>
             </div>
         </form>

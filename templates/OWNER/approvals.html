@@ -4,27 +4,27 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Staff Requests</h1>
-        <p>Review and approve inventory & event submissions from staff</p>
+        <h1 data-en="Staff Requests" data-tl="Mga Hiling ng Staff">Staff Requests</h1>
+        <p data-en="Review and approve inventory &amp; event submissions from staff" data-tl="Suriin at aprubahan ang mga hiling ng staff sa imbentaryo at event">Review and approve inventory & event submissions from staff</p>
     </div>
 </div>
 <!-- PENDING INVENTORY REQUESTS -->
 <div class="table-card" style="margin-bottom: 24px;">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Pending Inventory Requests</h3>
-        <span class="badge badge-amber">{{ pending_inventory.count }} pending</span>
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Pending Inventory Requests" data-tl="Naghihintay na Hiling sa Imbentaryo">Pending Inventory Requests</h3>
+        <span class="badge badge-amber">{{ pending_inventory.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Requested By</th>
-                <th>Item Name</th>
-                <th>Qty</th>
-                <th>Total Stock</th>
-                <th>Unit</th>
-                <th>Category</th>
-                <th>Date</th>
-                <th style="text-align:center;">Action</th>
+                <th data-en="Requested By" data-tl="Hiniling Ni">Requested By</th>
+                <th data-en="Item Name" data-tl="Pangalan ng Item">Item Name</th>
+                <th data-en="Qty" data-tl="Dami">Qty</th>
+                <th data-en="Total Stock" data-tl="Kabuuang Stock">Total Stock</th>
+                <th data-en="Unit" data-tl="Unit">Unit</th>
+                <th data-en="Category" data-tl="Kategorya">Category</th>
+                <th data-en="Date" data-tl="Petsa">Date</th>
+                <th style="text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -40,14 +40,14 @@
                 <td style="text-align:center;">
                     <form method="POST" action="{% url 'approve-inventory-request' req.pk %}" style="display:inline;">
                         {% csrf_token %}
-                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ Approve</button>
-                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ Reject</button>
+                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
+                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ <span data-en="Reject" data-tl="Tanggihan">Reject</span></button>
                     </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No pending inventory requests.</td>
+                <td colspan="8" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No pending inventory requests." data-tl="Walang naghihintay na hiling sa imbentaryo.">No pending inventory requests.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -57,18 +57,18 @@
 <!-- PENDING EVENT REQUESTS -->
 <div class="table-card" style="margin-bottom: 24px;">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Pending Event Requests</h3>
-        <span class="badge badge-amber">{{ pending_events.count }} pending</span>
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Pending Event Requests" data-tl="Naghihintay na Hiling sa Event">Pending Event Requests</h3>
+        <span class="badge badge-amber">{{ pending_events.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Requested By</th>
-                <th>Event Name</th>
-                <th>Event Date</th>
-                <th>Description</th>
-                <th>Submitted</th>
-                <th style="text-align:center;">Action</th>
+                <th data-en="Requested By" data-tl="Hiniling Ni">Requested By</th>
+                <th data-en="Event Name" data-tl="Pangalan ng Event">Event Name</th>
+                <th data-en="Event Date" data-tl="Petsa ng Event">Event Date</th>
+                <th data-en="Description" data-tl="Deskripsyon">Description</th>
+                <th data-en="Submitted" data-tl="Isinumite">Submitted</th>
+                <th style="text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -82,14 +82,14 @@
                 <td style="text-align:center;">
                     <form method="POST" action="{% url 'approve-event-request' req.pk %}" style="display:inline;">
                         {% csrf_token %}
-                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ Approve</button>
-                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ Reject</button>
+                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
+                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ <span data-en="Reject" data-tl="Tanggihan">Reject</span></button>
                     </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No pending event requests.</td>
+                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No pending event requests." data-tl="Walang naghihintay na hiling sa event.">No pending event requests.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -99,46 +99,46 @@
 <!-- HISTORY -->
 <div class="table-card">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Recent Decisions</h3>
+        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Recent Decisions" data-tl="Kamakailang Desisyon">Recent Decisions</h3>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Type</th>
-                <th>Item / Event</th>
-                <th>Requested By</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th data-en="Type" data-tl="Uri">Type</th>
+                <th data-en="Item / Event" data-tl="Item / Event">Item / Event</th>
+                <th data-en="Requested By" data-tl="Hiniling Ni">Requested By</th>
+                <th data-en="Status" data-tl="Katayuan">Status</th>
+                <th data-en="Date" data-tl="Petsa">Date</th>
             </tr>
         </thead>
         <tbody>
             {% for req in all_inventory %}
             <tr>
-                <td><span class="badge badge-blue">Inventory</span></td>
+                <td><span class="badge badge-blue" data-en="Inventory" data-tl="Imbentaryo">Inventory</span></td>
                 <td><strong>{{ req.item_name }}</strong></td>
                 <td>{{ req.requested_by.username }}</td>
                 <td>
-                    {% if req.status == 'approved' %}<span class="badge badge-green">Approved</span>
-                    {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+                    {% if req.status == 'approved' %}<span class="badge badge-green" data-en="Approved" data-tl="Inaprubahan">Approved</span>
+                    {% else %}<span class="badge badge-red" data-en="Rejected" data-tl="Tinanggihan">Rejected</span>{% endif %}
                 </td>
                 <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
             </tr>
             {% endfor %}
             {% for req in all_events %}
             <tr>
-                <td><span class="badge badge-teal">Event</span></td>
+                <td><span class="badge badge-teal" data-en="Event" data-tl="Event">Event</span></td>
                 <td><strong>{{ req.event_name }}</strong></td>
                 <td>{{ req.requested_by.username }}</td>
                 <td>
-                    {% if req.status == 'approved' %}<span class="badge badge-green">Approved</span>
-                    {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+                    {% if req.status == 'approved' %}<span class="badge badge-green" data-en="Approved" data-tl="Inaprubahan">Approved</span>
+                    {% else %}<span class="badge badge-red" data-en="Rejected" data-tl="Tinanggihan">Rejected</span>{% endif %}
                 </td>
                 <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
             </tr>
             {% endfor %}
             {% if not all_inventory and not all_events %}
             <tr>
-                <td colspan="5" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;">No decisions made yet.</td>
+                <td colspan="5" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No decisions made yet." data-tl="Wala pang desisyong ginawa.">No decisions made yet.</td>
             </tr>
             {% endif %}
         </tbody>

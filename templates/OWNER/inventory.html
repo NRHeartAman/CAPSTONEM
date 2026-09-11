@@ -368,17 +368,17 @@
 
 <div class="page-header">
     <div>
-        <h1>Inventory Management</h1>
-        <p>Track and manage your ingredients and shop supplies</p>
+        <h1 data-en="Inventory Management" data-tl="Pamamahala ng Imbentaryo">Inventory Management</h1>
+        <p data-en="Track and manage your ingredients and shop supplies" data-tl="Subaybayan at pamahalaan ang mga sangkap at suplay">Track and manage your ingredients and shop supplies</p>
     </div>
 
     {% if request.user.role == 'OWNER' %}
     <button class="btn btn-primary" onclick="openModal('entryModal')">
-        <i class='bx bx-plus'></i> Add New Entry
+        <i class='bx bx-plus'></i> <span data-en="Add New Entry" data-tl="Magdagdag ng Bago">Add New Entry</span>
     </button>
     {% else %}
     <button class="btn btn-primary" onclick="openModal('staffRequestModal')">
-        <i class='bx bx-send'></i> Request New Item
+        <i class='bx bx-send'></i> <span data-en="Request New Item" data-tl="Humiling ng Bagong Item">Request New Item</span>
     </button>
     {% endif %}
 </div>
@@ -388,10 +388,10 @@
 <div class="restock-banner">
     <div class="restock-banner-icon">⚠️</div>
     <div>
-        <div class="restock-banner-title">Restock Alert — {{ low_stock_items|length }} item{{ low_stock_items|length|pluralize }} need attention</div>
+        <div class="restock-banner-title"><span data-en="Restock Alert" data-tl="Alerto sa Restock">Restock Alert</span> — {{ low_stock_items|length }} <span data-en="item{{ low_stock_items|length|pluralize }} need attention" data-tl="item ang kailangang pansinin">item{{ low_stock_items|length|pluralize }} need attention</span></div>
         <div class="restock-banner-items">
             {% for item in low_stock_items %}
-                <strong>{{ item.item_name }}</strong> ({{ item.stock_qty|floatformat:"-2" }} {{ item.unit }} left){% if not forloop.last %} &nbsp;·&nbsp; {% endif %}
+                <strong>{{ item.item_name }}</strong> ({{ item.stock_qty|floatformat:"-2" }} {{ item.unit }} <span data-en="left" data-tl="natitira">left</span>){% if not forloop.last %} &nbsp;·&nbsp; {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -403,10 +403,10 @@
 <div class="expiry-banner">
     <div class="expiry-banner-icon">🗓️</div>
     <div>
-        <div class="expiry-banner-title">Expiry Warning — {{ expiring_soon_items|length }} ingredient{{ expiring_soon_items|length|pluralize }} expiring within 7 days</div>
+        <div class="expiry-banner-title"><span data-en="Expiry Warning" data-tl="Babala sa Expiry">Expiry Warning</span> — {{ expiring_soon_items|length }} <span data-en="ingredient{{ expiring_soon_items|length|pluralize }} expiring within 7 days" data-tl="sangkap ang mag-e-expire sa loob ng 7 araw">ingredient{{ expiring_soon_items|length|pluralize }} expiring within 7 days</span></div>
         <div class="expiry-banner-items">
             {% for item in expiring_soon_items %}
-                <strong>{{ item.item_name }}</strong> — expires {{ item.expiry_date|date:"M d, Y" }}{% if not forloop.last %}, {% endif %}
+                <strong>{{ item.item_name }}</strong> — <span data-en="expires" data-tl="mag-e-expire sa">expires</span> {{ item.expiry_date|date:"M d, Y" }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -416,24 +416,24 @@
 <!-- ── STAT CARDS ── -->
 <div class="stats-grid">
     <div class="stat-card blue">
-        <div class="stat-label">Daily Sales</div>
+        <div class="stat-label" data-en="Daily Sales" data-tl="Araw-araw na Benta">Daily Sales</div>
         <div class="stat-value">₱{{ daily_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub">Today's revenue</div>
+        <div class="stat-sub" data-en="Today's revenue" data-tl="Kita ngayong araw">Today's revenue</div>
     </div>
     <div class="stat-card teal">
-        <div class="stat-label">Weekly Sales</div>
+        <div class="stat-label" data-en="Weekly Sales" data-tl="Lingguhang Benta">Weekly Sales</div>
         <div class="stat-value">₱{{ weekly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub">This week total</div>
+        <div class="stat-sub" data-en="This week total" data-tl="Kabuuan ngayong linggo">This week total</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-label">Monthly Sales</div>
+        <div class="stat-label" data-en="Monthly Sales" data-tl="Buwanang Benta">Monthly Sales</div>
         <div class="stat-value">₱{{ monthly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub">This month total</div>
+        <div class="stat-sub" data-en="This month total" data-tl="Kabuuan ngayong buwan">This month total</div>
     </div>
     <div class="stat-card red">
-        <div class="stat-label">Items Tracked</div>
+        <div class="stat-label" data-en="Items Tracked" data-tl="Naka-track na Item">Items Tracked</div>
         <div class="stat-value">{{ inventory|length|intcomma }}</div>
-        <div class="stat-sub">In current category</div>
+        <div class="stat-sub" data-en="In current category" data-tl="Sa kasalukuyang kategorya">In current category</div>
     </div>
 </div>
 
@@ -472,20 +472,20 @@
 
 <!-- ── TABS ── -->
 <div class="tab-bar">
-    <a href="?tab=Stock"  class="tab-btn {% if current_tab == 'Stock' %}active-tab{% endif %}">🌿 Ingredients</a>
-    <a href="?tab=Supply" class="tab-btn {% if current_tab == 'Supply' %}active-tab{% endif %}">📦 Supplies</a>
+    <a href="?tab=Stock"  class="tab-btn {% if current_tab == 'Stock' %}active-tab{% endif %}">🌿 <span data-en="Ingredients" data-tl="Mga Sangkap">Ingredients</span></a>
+    <a href="?tab=Supply" class="tab-btn {% if current_tab == 'Supply' %}active-tab{% endif %}">📦 <span data-en="Supplies" data-tl="Mga Suplay">Supplies</span></a>
 </div>
 
 <!-- ── MAIN TABLE ── -->
 <table>
     <thead>
         <tr>
-            <th>Item Name</th>
-            <th>Initial Stock</th>
-            <th>Current Level</th>
-            {% if current_tab == 'Stock' %}<th>Expiry Date</th>{% endif %}
-            <th>Status</th>
-            {% if request.user.role == 'OWNER' %}<th style="text-align:center;">Actions</th>{% endif %}
+            <th data-en="Item Name" data-tl="Pangalan ng Item">Item Name</th>
+            <th data-en="Initial Stock" data-tl="Panimulang Stock">Initial Stock</th>
+            <th data-en="Current Level" data-tl="Kasalukuyang Antas">Current Level</th>
+            {% if current_tab == 'Stock' %}<th data-en="Expiry Date" data-tl="Petsa ng Expiry">Expiry Date</th>{% endif %}
+            <th data-en="Status" data-tl="Katayuan">Status</th>
+            {% if request.user.role == 'OWNER' %}<th style="text-align:center;" data-en="Actions" data-tl="Aksyon">Actions</th>{% endif %}
         </tr>
     </thead>
     <tbody>
@@ -578,18 +578,18 @@
 {% if request.user.role == 'OWNER' and audit_logs %}
 <div class="audit-card">
     <div class="audit-card-header">
-        <h3>📋 Inventory Audit Log</h3>
-        <span class="badge badge-blue">{{ audit_logs|length }} recent entries</span>
+        <h3>📋 <span data-en="Inventory Audit Log" data-tl="Audit Log ng Imbentaryo">Inventory Audit Log</span></h3>
+        <span class="badge badge-blue">{{ audit_logs|length }} <span data-en="recent entries" data-tl="kamakailang entry">recent entries</span></span>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Date & Time</th>
-                <th>Item</th>
-                <th>Type</th>
-                <th>Qty Change</th>
-                <th>Performed By</th>
-                <th>Notes / Reason</th>
+                <th data-en="Date &amp; Time" data-tl="Petsa &amp; Oras">Date & Time</th>
+                <th data-en="Item" data-tl="Item">Item</th>
+                <th data-en="Type" data-tl="Uri">Type</th>
+                <th data-en="Qty Change" data-tl="Pagbabago sa Dami">Qty Change</th>
+                <th data-en="Performed By" data-tl="Ginawa Ni">Performed By</th>
+                <th data-en="Notes / Reason" data-tl="Tala / Dahilan">Notes / Reason</th>
             </tr>
         </thead>
         <tbody>
@@ -599,13 +599,13 @@
                 <td><strong>{{ log.item_name }}</strong></td>
                 <td>
                     {% if log.action == 'restock' %}
-                        <span class="audit-type-pill audit-restock">➕ Restock</span>
+                        <span class="audit-type-pill audit-restock">➕ <span data-en="Restock" data-tl="Restock">Restock</span></span>
                     {% elif log.action == 'waste' %}
-                        <span class="audit-type-pill audit-waste">🗑 Waste{% if log.waste_type %} — {{ log.waste_type|capfirst }}{% endif %}</span>
+                        <span class="audit-type-pill audit-waste">🗑 <span data-en="Waste" data-tl="Sayang">Waste</span>{% if log.waste_type %} — {{ log.waste_type|capfirst }}{% endif %}</span>
                     {% elif log.action == 'initial' %}
-                        <span class="audit-type-pill audit-initial">🆕 Initial</span>
+                        <span class="audit-type-pill audit-initial">🆕 <span data-en="Initial" data-tl="Panimula">Initial</span></span>
                     {% elif log.action == 'deduct' %}
-                        <span class="audit-type-pill audit-deduct">➖ Deduct</span>
+                        <span class="audit-type-pill audit-deduct">➖ <span data-en="Deduct" data-tl="Bawas">Deduct</span></span>
                     {% endif %}
                 </td>
                 <td>
@@ -630,18 +630,18 @@
 {% if request.user.role != 'OWNER' and my_inventory_requests %}
 <div class="request-card">
     <div class="request-card-header">
-        <h3>My Inventory Requests</h3>
-        <span class="badge badge-blue">{{ my_inventory_requests|length }} recent</span>
+        <h3 data-en="My Inventory Requests" data-tl="Aking mga Hiling sa Imbentaryo">My Inventory Requests</h3>
+        <span class="badge badge-blue">{{ my_inventory_requests|length }} <span data-en="recent" data-tl="kamakailan">recent</span></span>
     </div>
     <table>
         <thead>
             <tr>
-                <th>Item Name</th>
-                <th>Qty</th>
-                <th>Unit</th>
-                <th>Category</th>
-                <th style="text-align:center;">Status</th>
-                <th style="text-align:center;">Submitted</th>
+                <th data-en="Item Name" data-tl="Pangalan ng Item">Item Name</th>
+                <th data-en="Qty" data-tl="Dami">Qty</th>
+                <th data-en="Unit" data-tl="Unit">Unit</th>
+                <th data-en="Category" data-tl="Kategorya">Category</th>
+                <th style="text-align:center;" data-en="Status" data-tl="Katayuan">Status</th>
+                <th style="text-align:center;" data-en="Submitted" data-tl="Isinumite">Submitted</th>
             </tr>
         </thead>
         <tbody>

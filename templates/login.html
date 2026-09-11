@@ -169,9 +169,14 @@
         position: relative;
     }
 
-    .theme-toggle-btn {
+    .top-right-controls {
         position: absolute;
         top: 24px; right: 24px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .theme-toggle-btn {
         width: 36px; height: 36px;
         border-radius: 10px;
         background: var(--surface2);
@@ -185,6 +190,25 @@
         transition: all 0.2s;
     }
     .theme-toggle-btn:hover { color: var(--text); border-color: var(--border-focus); }
+
+    .lang-toggle-btn {
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-family: 'Syne', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+    }
+    .lang-toggle-btn:hover { color: var(--text); border-color: var(--border-focus); }
 
     .login-card { width: 100%; max-width: 380px; }
 
@@ -368,13 +392,18 @@
 
 <div class="right-panel">
 
-    <div class="theme-toggle-btn" id="theme-toggle" title="Toggle UI Theme Mode">
-        <i class='bx bx-moon' id="theme-icon"></i>
+    <div class="top-right-controls">
+        <button type="button" class="lang-toggle-btn" id="lang-toggle" title="Switch language / Palitan ang wika">
+            <span id="lang-label">EN</span>
+        </button>
+        <div class="theme-toggle-btn" id="theme-toggle" title="Toggle UI Theme Mode">
+            <i class='bx bx-moon' id="theme-icon"></i>
+        </div>
     </div>
 
     <div class="login-card">
-        <div class="login-heading">Welcome</div>
-        <div class="login-sub">Sign in to your account</div>
+        <div class="login-heading" data-en="Welcome" data-tl="Maligayang Pagdating">Welcome</div>
+        <div class="login-sub" data-en="Sign in to your account" data-tl="Mag-sign in sa iyong account">Sign in to your account</div>
 
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
@@ -382,25 +411,25 @@
             <div class="role-selector">
                 <input type="radio" name="role" id="role-staff" value="Staff" class="role-option" checked>
                 <label for="role-staff" class="role-label">
-                    <i class='bx bx-user'></i> Staff
+                    <i class='bx bx-user'></i> <span data-en="Staff" data-tl="Staff">Staff</span>
                 </label>
 
                 <input type="radio" name="role" id="role-owner" value="Owner" class="role-option">
                 <label for="role-owner" class="role-label">
-                    <i class='bx bx-crown'></i> Owner Portal
+                    <i class='bx bx-crown'></i> <span data-en="Owner Portal" data-tl="Portal ng Owner">Owner Portal</span>
                 </label>
             </div>
 
             <div class="form-group">
-                <label>Username</label>
+                <label data-en="Username" data-tl="Username">Username</label>
                 <div class="input-wrap">
                     <i class='bx bx-user-circle'></i>
-                    <input type="text" name="username" placeholder="Enter security username" required autocomplete="username">
+                    <input type="text" name="username" data-en-placeholder="Enter security username" data-tl-placeholder="Ilagay ang iyong username" placeholder="Enter security username" required autocomplete="username">
                 </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 10px;">
-                <label>Password</label>
+                <label data-en="Password" data-tl="Password">Password</label>
                 <div class="input-wrap">
                     <i class='bx bx-lock-alt'></i>
                     <input type="password" name="password" id="login-password" class="has-toggle" placeholder="••••••••" required autocomplete="current-password">
@@ -410,12 +439,12 @@
                 </div>
                 <!-- Integrated Recovery Node Connection -->
                 <div class="forgot-link-wrapper">
-                    <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot Password?</a>
+                    <a href="{% url 'forgot_password' %}" class="forgot-link" data-en="Forgot Password?" data-tl="Nakalimutan ang Password?">Forgot Password?</a>
                 </div>
             </div>
 
             <button type="submit" class="btn-login">
-                <i class='bx bx-log-in-circle'></i> Login
+                <i class='bx bx-log-in-circle'></i> <span data-en="Login" data-tl="Mag-login">Login</span>
             </button>
         </form>
     </div>
@@ -436,6 +465,32 @@
         html.setAttribute('data-theme', next);
         themeIcon.className = next === 'dark' ? 'bx bx-moon' : 'bx bx-sun';
         localStorage.setItem('cc-theme', next);
+    });
+
+    /* ── Language toggle (EN / TL) ── */
+    const langBtn   = document.getElementById('lang-toggle');
+    const langLabel = document.getElementById('lang-label');
+
+    function applyLang(lang) {
+        document.querySelectorAll('[data-en]').forEach(function (el) {
+            el.textContent = lang === 'tl' ? el.getAttribute('data-tl') : el.getAttribute('data-en');
+        });
+        document.querySelectorAll('[data-en-placeholder]').forEach(function (el) {
+            el.setAttribute('placeholder', lang === 'tl'
+                ? el.getAttribute('data-tl-placeholder')
+                : el.getAttribute('data-en-placeholder'));
+        });
+        langLabel.textContent = lang === 'tl' ? 'TL' : 'EN';
+        document.documentElement.setAttribute('lang', lang === 'tl' ? 'fil' : 'en');
+    }
+
+    const savedLang = localStorage.getItem('cc-lang') || 'en';
+    applyLang(savedLang);
+
+    langBtn.addEventListener('click', function () {
+        const next = (localStorage.getItem('cc-lang') || 'en') === 'en' ? 'tl' : 'en';
+        localStorage.setItem('cc-lang', next);
+        applyLang(next);
     });
 
     const pwInput  = document.getElementById('login-password');

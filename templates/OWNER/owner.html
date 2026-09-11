@@ -103,34 +103,34 @@
 
 <div class="page-header">
     <div>
-        <h1>Owner Dashboard</h1>
-        <p>Business overview &amp; control panel</p>
+        <h1 data-en="Owner Dashboard" data-tl="Dashboard ng Owner">Owner Dashboard</h1>
+        <p data-en="Business overview &amp; control panel" data-tl="Pangkalahatang-ideya ng negosyo &amp; control panel">Business overview &amp; control panel</p>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card teal">
-        <div class="stat-label">Units Sold This Month</div>
+        <div class="stat-label" data-en="Units Sold This Month" data-tl="Naibentang Units Ngayong Buwan">Units Sold This Month</div>
         <div class="stat-value" data-count-target="{{ monthly_units|default:0 }}">0</div>
-        <div class="stat-sub">Total units dispatched</div>
+        <div class="stat-sub" data-en="Total units dispatched" data-tl="Kabuuang units na naipadala">Total units dispatched</div>
     </div>
     <div class="stat-card blue">
-        <div class="stat-label">Transactions This Month</div>
+        <div class="stat-label" data-en="Transactions This Month" data-tl="Transaksyon Ngayong Buwan">Transactions This Month</div>
         <div class="stat-value" data-count-target="{{ monthly_orders|default:0 }}">0</div>
-        <div class="stat-sub">Unique orders processed</div>
+        <div class="stat-sub" data-en="Unique orders processed" data-tl="Natapos na mga order">Unique orders processed</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-label">7-Day Revenue</div>
+        <div class="stat-label" data-en="7-Day Revenue" data-tl="Kita sa 7 Araw">7-Day Revenue</div>
         <div class="stat-value"><span class="peso">₱</span><span data-count-target="{{ weekly_sales|default:0 }}" data-decimals="2">0.00</span></div>
-        <div class="stat-sub">Last 7 days total</div>
+        <div class="stat-sub" data-en="Last 7 days total" data-tl="Kabuuan ng huling 7 araw">Last 7 days total</div>
     </div>
     <div class="stat-card red"
          {% if low_stock_items %}
          title="Low stock:&#10;{% for item in low_stock_items %}{{ item.item_name }} — {{ item.stock_qty|floatformat:0 }} {{ item.unit }}&#10;{% endfor %}{% if low_stock_count > 5 %}+{{ low_stock_count|add:"-5" }} more&#10;{% endif %}"
          {% endif %}>
-        <div class="stat-label">Low Stock Alerts <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
+        <div class="stat-label"><span data-en="Low Stock Alerts" data-tl="Mababang Stock na Alerto">Low Stock Alerts</span> <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
         <div class="stat-value" data-count-target="{{ low_stock_count|default:0 }}">0</div>
-        <div class="stat-sub">Items below threshold</div>
+        <div class="stat-sub" data-en="Items below threshold" data-tl="Mga item na mababa sa threshold">Items below threshold</div>
     </div>
 
 </div>
@@ -139,8 +139,8 @@
 
     <div class="chart-card" style="margin-bottom:0;">
         <div class="chart-card-header">
-            <h3><i class='bx bx-trophy'></i> Top Products</h3>
-            <span class="badge badge-amber">By units sold</span>
+            <h3><i class='bx bx-trophy'></i> <span data-en="Top Products" data-tl="Nangungunang Produkto">Top Products</span></h3>
+            <span class="badge badge-amber" data-en="By units sold" data-tl="Base sa naibentang units">By units sold</span>
         </div>
         <div class="chart-wrapper">
             <canvas id="topChart"></canvas>
@@ -155,8 +155,8 @@
             <i class='bx bx-package' style="font-size:22px;"></i>
         </div>
         <div>
-            <div class="quick-nav-label">Inventory</div>
-            <div class="quick-nav-sub">Manage stock</div>
+            <div class="quick-nav-label" data-en="Inventory" data-tl="Imbentaryo">Inventory</div>
+            <div class="quick-nav-sub" data-en="Manage stock" data-tl="Pamahalaan ang stock">Manage stock</div>
         </div>
     </a>
     <a href="{% url 'view-forecast' %}" class="quick-nav-card">
@@ -164,8 +164,8 @@
             <i class='bx bx-analyse' style="font-size:22px;"></i>
         </div>
         <div>
-            <div class="quick-nav-label">Forecast</div>
-            <div class="quick-nav-sub">Demand engine</div>
+            <div class="quick-nav-label" data-en="Forecast" data-tl="Forecast">Forecast</div>
+            <div class="quick-nav-sub" data-en="Demand engine" data-tl="Demand engine">Demand engine</div>
         </div>
     </a>
     <a href="{% url 'view-events' %}" class="quick-nav-card">
@@ -173,8 +173,8 @@
             <i class='bx bx-calendar' style="font-size:22px;"></i>
         </div>
         <div>
-            <div class="quick-nav-label">Events</div>
-            <div class="quick-nav-sub">Promos &amp; campaigns</div>
+            <div class="quick-nav-label" data-en="Events" data-tl="Mga Event">Events</div>
+            <div class="quick-nav-sub" data-en="Promos &amp; campaigns" data-tl="Mga promo &amp; kampanya">Promos &amp; campaigns</div>
         </div>
     </a>
     <a href="{% url 'view-upload-data' %}" class="quick-nav-card">
@@ -182,23 +182,23 @@
             <i class='bx bx-cloud-upload' style="font-size:22px;"></i>
         </div>
         <div>
-            <div class="quick-nav-label">Upload</div>
-            <div class="quick-nav-sub">CSV import</div>
+            <div class="quick-nav-label" data-en="Upload" data-tl="I-upload">Upload</div>
+            <div class="quick-nav-sub" data-en="CSV import" data-tl="CSV import">CSV import</div>
         </div>
     </a>
 </div>
 
 <div class="chart-card" style="padding:0; overflow:hidden; margin-bottom: 0;">
     <div class="chart-card-header" style="padding: 18px 22px; border-bottom: 1px solid var(--border);">
-        <h3><i class='bx bx-error-circle'></i> Stock Warnings</h3>
-        <span class="badge badge-red">{{ low_stock_count|default:0 }} alerts</span>
+        <h3><i class='bx bx-error-circle'></i> <span data-en="Stock Warnings" data-tl="Babala sa Stock">Stock Warnings</span></h3>
+        <span class="badge badge-red">{{ low_stock_count|default:0 }} <span data-en="alerts" data-tl="alerto">alerts</span></span>
     </div>
     <table style="border-radius:0; border:none;">
         <thead>
             <tr>
-                <th>Item Name</th>
-                <th>Quantity Left</th>
-                <th style="text-align: center;">Priority</th>
+                <th data-en="Item Name" data-tl="Pangalan ng Item">Item Name</th>
+                <th data-en="Quantity Left" data-tl="Natitirang Dami">Quantity Left</th>
+                <th style="text-align: center;" data-en="Priority" data-tl="Priyoridad">Priority</th>
             </tr>
         </thead>
         <tbody>
@@ -208,15 +208,15 @@
                 <td style="color: var(--text-muted);">{{ item.stock_qty }} {{ item.unit }}</td>
                 <td style="text-align: center;">
                     {% if item.stock_qty <= 5 %}
-                        <span class="badge badge-red">Critical</span>
+                        <span class="badge badge-red" data-en="Critical" data-tl="Kritikal">Critical</span>
                     {% else %}
-                        <span class="badge badge-amber">Low Stock</span>
+                        <span class="badge badge-amber" data-en="Low Stock" data-tl="Mababang Stock">Low Stock</span>
                     {% endif %}
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3" style="text-align: center; padding: 36px; color: var(--text-dim); font-size: 13px;">
+                <td colspan="3" style="text-align: center; padding: 36px; color: var(--text-dim); font-size: 13px;" data-en="All stock levels are within safe thresholds" data-tl="Ligtas ang lahat ng stock level">
                     All stock levels are within safe thresholds
                 </td>
             </tr>

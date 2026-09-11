@@ -384,15 +384,15 @@
 <!-- PAGE HEADER -->
 <div class="page-header">
     <div>
-        <h1>Demand Forecast</h1>
+        <h1 data-en="Demand Forecast" data-tl="Demand Forecast">Demand Forecast</h1>
         <div class="location-pill">
             <div class="location-dot"></div>
-            <span>Tracking: <strong id="locationLabel" style="color: var(--text);">Binangonan, PH</strong></span>
+            <span><span data-en="Tracking" data-tl="Sinusubaybayan">Tracking</span>: <strong id="locationLabel" style="color: var(--text);">Binangonan, PH</strong></span>
         </div>
     </div>
     <div class="search-row">
-        <input type="text" id="city_input" placeholder="Enter city name...">
-        <button class="btn btn-primary" id="searchBtn"><i class='bx bx-search'></i> Search</button>
+        <input type="text" id="city_input" data-en-placeholder="Enter city name..." data-tl-placeholder="Ilagay ang pangalan ng lungsod..." placeholder="Enter city name...">
+        <button class="btn btn-primary" id="searchBtn"><i class='bx bx-search'></i> <span data-en="Search" data-tl="Maghanap">Search</span></button>
         <button class="btn btn-ghost" id="locationBtn"><i class='bx bx-target-lock'></i> GPS</button>
     </div>
 </div>
@@ -408,38 +408,38 @@
                     <span class="signal-icon">🌡</span>
                     <div>
                         <div class="signal-value" id="currentTemp">--</div>
-                        <div class="signal-label">Temp</div>
+                        <div class="signal-label" data-en="Temp" data-tl="Temp">Temp</div>
                     </div>
                 </div>
                 <div class="signal-item" id="humidCard">
                     <span class="signal-icon">💧</span>
                     <div>
                         <div class="signal-value" id="humidityVal">--%</div>
-                        <div class="signal-label">Humidity</div>
+                        <div class="signal-label" data-en="Humidity" data-tl="Halumigmig">Humidity</div>
                     </div>
                 </div>
                 <div class="signal-item" id="condCard">
                     <span class="signal-icon" id="condIcon">☁</span>
                     <div>
                         <div class="signal-value" id="condVal" style="font-size: 12px;">--</div>
-                        <div class="signal-label">Condition</div>
+                        <div class="signal-label" data-en="Condition" data-tl="Kondisyon">Condition</div>
                     </div>
                 </div>
             </div>
 
-            <p class="panel-label" style="margin-bottom: 4px;">Predicted demand today</p>
+            <p class="panel-label" style="margin-bottom: 4px;" data-en="Predicted demand today" data-tl="Inaasahang demand ngayon">Predicted demand today</p>
             <div id="predictionVal" class="prediction-number">--</div>
-            <div class="prediction-unit">Total units predicted today</div>
-            <p id="predictionReason" class="prediction-reason">
+            <div class="prediction-unit" data-en="Total units predicted today" data-tl="Kabuuang units na inaasahan ngayon">Total units predicted today</div>
+            <p id="predictionReason" class="prediction-reason" data-en="Waiting for weather data to run prediction..." data-tl="Hinihintay ang datos ng panahon para sa prediksyon...">
                 Waiting for weather data to run prediction...
             </p>
             <div class="accuracy-row" id="accuracyRow" style="display: none;">
                 <span class="accuracy-score" id="accuracyScore">--%</span>
-                <span>model accuracy · based on <strong id="rowCount">--</strong> historical records</span>
+                <span><span data-en="model accuracy · based on" data-tl="katumpakan ng model · batay sa">model accuracy · based on</span> <strong id="rowCount">--</strong> <span data-en="historical records" data-tl="kasaysayang rekord">historical records</span></span>
             </div>
             <p class="model-inputs-line">
-                Inputs used: <strong id="inputTemp">--</strong> ·
-                <strong id="inputHumid">--</strong> humidity ·
+                <span data-en="Inputs used:" data-tl="Ginamit na input:">Inputs used:</span> <strong id="inputTemp">--</strong> ·
+                <strong id="inputHumid">--</strong> <span data-en="humidity" data-tl="halumigmig">humidity</span> ·
                 <strong id="inputDay">--</strong>
             </p>
         </div>
@@ -448,11 +448,11 @@
     <!-- RIGHT: per-product forecast only -->
     <div>
         <div class="panel">
-            <p class="panel-label">Per-Product Forecast</p>
+            <p class="panel-label" data-en="Per-Product Forecast" data-tl="Forecast Kada Produkto">Per-Product Forecast</p>
             <div id="productBreakdown">
                 <div class="no-data-state">
                     <div style="font-size: 32px;">📊</div>
-                    <p>Upload sales data to see<br>per-product breakdown</p>
+                    <p><span data-en="Upload sales data to see" data-tl="Mag-upload ng sales data para makita ang">Upload sales data to see</span><br><span data-en="per-product breakdown" data-tl="breakdown kada produkto">per-product breakdown</span></p>
                 </div>
             </div>
         </div>
@@ -462,33 +462,33 @@
 <!-- MONTHLY OVERVIEW -->
 <div class="month-section">
     <div class="section-header">
-        <span class="section-title">Monthly Demand Overview</span>
-        <span class="section-badge" id="monthLabel">Loading…</span>
+        <span class="section-title" data-en="Monthly Demand Overview" data-tl="Buwanang Pangkalahatang-tanaw ng Demand">Monthly Demand Overview</span>
+        <span class="section-badge" id="monthLabel" data-en="Loading…" data-tl="Naglo-load…">Loading…</span>
     </div>
     <div class="panel">
-        <p class="panel-label" style="margin-bottom: 4px;">Projected Units by Week</p>
-        <p style="font-size: 12px; color: var(--text-dim); margin: 0;">Estimated demand split across 4 weeks</p>
+        <p class="panel-label" style="margin-bottom: 4px;" data-en="Projected Units by Week" data-tl="Inaasahang Units Kada Linggo">Projected Units by Week</p>
+        <p style="font-size: 12px; color: var(--text-dim); margin: 0;" data-en="Estimated demand split across 4 weeks" data-tl="Tinatayang demand na hinati sa 4 na linggo">Estimated demand split across 4 weeks</p>
         <div class="month-bars" id="monthBars"></div>
 
         <div class="month-stat-strip">
             <div class="month-stat accent-stat">
                 <div class="month-stat-icon">📦</div>
                 <div>
-                    <div class="stat-label">Monthly total</div>
+                    <div class="stat-label" data-en="Monthly total" data-tl="Buwanang kabuuan">Monthly total</div>
                     <div class="stat-value" id="monthTotal">--</div>
                 </div>
             </div>
             <div class="month-stat">
                 <div class="month-stat-icon">📊</div>
                 <div>
-                    <div class="stat-label">Avg / day</div>
+                    <div class="stat-label" data-en="Avg / day" data-tl="Avg / araw">Avg / day</div>
                     <div class="stat-value" id="monthAvgDay">--</div>
                 </div>
             </div>
             <div class="month-stat">
                 <div class="month-stat-icon">🏆</div>
                 <div>
-                    <div class="stat-label">Peak week</div>
+                    <div class="stat-label" data-en="Peak week" data-tl="Pinakamataas na linggo">Peak week</div>
                     <div class="stat-value" id="monthPeakWeek">--</div>
                     <div class="month-peak-range" id="monthPeakRange">--</div>
                 </div>
@@ -521,8 +521,13 @@
     const inputHumid       = document.querySelector("#inputHumid");
     const inputDay         = document.querySelector("#inputDay");
 
-    const DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function isTL() { return (localStorage.getItem('cc-lang') || 'en') === 'tl'; }
+    function L(en, tl) { return isTL() ? tl : en; }
+
+    const DAYS_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const DAYS_TL = ["Linggo","Lunes","Martes","Miyerkules","Huwebes","Biyernes","Sabado"];
+    const DAYS    = DAYS_EN;
+    const MONTHS  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const CONDITION_ICONS = {
         "clear":"☀","cloud":"☁","rain":"🌧","drizzle":"🌦",
@@ -578,7 +583,7 @@
 
         document.getElementById("monthTotal").textContent    = monthlyTotal.toLocaleString();
         document.getElementById("monthAvgDay").textContent   = avgPerDay;
-        document.getElementById("monthPeakWeek").textContent = `Week ${peakWeekIdx + 1}`;
+        document.getElementById("monthPeakWeek").textContent = `${L("Week", "Linggo")} ${peakWeekIdx + 1}`;
 
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const peakStart    = new Date(startOfMonth);
@@ -588,7 +593,8 @@
         document.getElementById("monthPeakRange").textContent =
             `${peakStart.getDate()} – ${Math.min(peakEnd.getDate(), daysInMonth)} ${MONTHS[now.getMonth()]}`;
 
-        const WEEK_LABELS = ["Week 1","Week 2","Week 3","Week 4"];
+        const weekWord    = L("Week", "Linggo");
+        const WEEK_LABELS = [1,2,3,4].map(n => `${weekWord} ${n}`);
         const currentWeek = Math.floor((now.getDate() - 1) / 7);
 
         const barsEl = document.getElementById("monthBars");
@@ -602,7 +608,7 @@
             const isPeak    = i === peakWeekIdx;
             return `
             <div class="month-bar-col ${colCls}">
-                ${isPeak ? '<div class="month-bar-peak-badge">Peak</div>' : ''}
+                ${isPeak ? `<div class="month-bar-peak-badge">${L("Peak", "Pinakamataas")}</div>` : ''}
                 <div class="month-bar-val">${total}</div>
                 <div class="month-bar ${barCls}" data-target-height="${heightPct}" title="${WEEK_LABELS[i]}: ${total} units"></div>
                 <div class="month-bar-label">${WEEK_LABELS[i]}</div>
@@ -626,7 +632,7 @@
             const response = await fetch(URL);
             const data     = await response.json();
             if (data.cod !== "200") {
-                predictionReason.textContent = "Location not found. Try another city.";
+                predictionReason.textContent = L("Location not found. Try another city.", "Hindi mahanap ang lokasyon. Subukan ang ibang lungsod.");
                 return;
             }
             updateWeatherSignals(data);
@@ -636,7 +642,7 @@
             const dailyData = buildDailyData(data.list);
             renderMonthly(dailyData);
         } catch (error) {
-            predictionReason.textContent = "Connection error. Check your network.";
+            predictionReason.textContent = L("Connection error. Check your network.", "May problema sa koneksyon. Suriin ang iyong internet.");
         }
     }
 
@@ -661,7 +667,7 @@
 
         inputTemp.textContent  = `${temp}°C`;
         inputHumid.textContent = `${humid}%`;
-        inputDay.textContent   = DAYS[new Date().getDay()];
+        inputDay.textContent   = (isTL() ? DAYS_TL : DAYS_EN)[new Date().getDay()];
     }
 
     async function fetchMLPrediction(temperature, humidity) {
@@ -684,7 +690,7 @@
             }
         } catch (err) {
             predictionVal.textContent    = "--";
-            predictionReason.textContent = "Upload historical sales data to enable the ML Engine.";
+            predictionReason.textContent = L("Upload historical sales data to enable the ML Engine.", "Mag-upload ng datos ng benta para paganahin ang ML Engine.");
         }
     }
 
@@ -693,7 +699,7 @@
         productBreakdown.innerHTML = products.map(p => {
             const barWidth   = Math.round((p.qty / maxQty) * 100);
             const trendClass = p.trend === "up" ? "trend-up badge" : "trend-down badge";
-            const trendLabel = p.trend === "up" ? "↑ High" : "↓ Low";
+            const trendLabel = p.trend === "up" ? L("↑ High", "↑ Mataas") : L("↓ Low", "↓ Mababa");
             return `
             <div class="product-row">
                 <span class="product-name">${p.name}</span>
@@ -732,4 +738,4 @@
 
     window.addEventListener("load", () => getWeatherAndForecast("Binangonan"));
 </script>
-{% endblock %} Good luck please.
+{% endblock %}

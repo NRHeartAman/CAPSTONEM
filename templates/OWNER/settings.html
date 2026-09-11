@@ -82,8 +82,8 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>System Configuration</h1>
-        <p>Internal parameters &amp; security settings</p>
+        <h1 data-en="System Configuration" data-tl="Konpigurasyon ng Sistema">System Configuration</h1>
+        <p data-en="Internal parameters &amp; security settings" data-tl="Panloob na parameter &amp; setting ng seguridad">Internal parameters &amp; security settings</p>
     </div>
 </div>
 
@@ -94,32 +94,32 @@
     <div class="settings-card">
         <div class="settings-card-header">
             <i class='bx bx-store-alt' style="background: var(--blue-dim); color: var(--blue);"></i>
-            <h3>Store Profile</h3>
+            <h3 data-en="Store Profile" data-tl="Profile ng Tindahan">Store Profile</h3>
         </div>
         <div class="settings-card-body">
             <div class="form-group">
-                <label>Store Name</label>
+                <label data-en="Store Name" data-tl="Pangalan ng Tindahan">Store Name</label>
                 <input type="text" name="store_name" value="{{ config.store_name }}">
             </div>
             <div class="form-group">
-                <label>Contact Number</label>
+                <label data-en="Contact Number" data-tl="Numero ng Kontak">Contact Number</label>
                 <input type="text" name="contact_number" value="{{ config.contact_number }}">
             </div>
             {# Fix #1: label uses ₱ symbol, not PHP #}
             <div class="form-group">
-                <label>Currency</label>
+                <label data-en="Currency" data-tl="Pera">Currency</label>
                 <input type="text" value="Philippine Peso (₱)" disabled class="disabled-input">
             </div>
             <div class="form-group">
-                <label>Store Latitude</label>
+                <label data-en="Store Latitude" data-tl="Latitude ng Tindahan">Store Latitude</label>
                 <input type="number" step="0.0001" name="store_lat" value="{{ config.store_lat }}">
             </div>
             <div class="form-group">
-                <label>Store Longitude</label>
+                <label data-en="Store Longitude" data-tl="Longitude ng Tindahan">Store Longitude</label>
                 <input type="number" step="0.0001" name="store_lon" value="{{ config.store_lon }}">
             </div>
             <button type="submit" name="update_config" class="btn btn-primary" style="width: 100%; margin-top: 8px; justify-content: center;">
-                <i class='bx bx-save'></i> Update Profile &amp; Engine
+                <i class='bx bx-save'></i> <span data-en="Update Profile &amp; Engine" data-tl="I-update ang Profile &amp; Engine">Update Profile & Engine</span>
             </button>
         </div>
     </div>
@@ -128,24 +128,24 @@
     <div class="settings-card">
         <div class="settings-card-header">
             <i class='bx bx-slider-alt' style="background: var(--purple-dim); color: var(--purple);"></i>
-            <h3>Forecast Engine</h3>
+            <h3 data-en="Forecast Engine" data-tl="Forecast Engine">Forecast Engine</h3>
         </div>
         <div class="settings-card-body">
             <div class="form-group">
-                <label>Stock Threshold (Low Stock Limit)</label>
+                <label data-en="Stock Threshold (Low Stock Limit)" data-tl="Threshold ng Stock (Limitasyon ng Mababang Stock)">Stock Threshold (Low Stock Limit)</label>
                 <input type="number" name="stock_threshold" value="{{ config.stock_threshold }}">
             </div>
             <div class="form-group">
-                <label>Weather API Key (OpenWeatherMap)</label>
+                <label data-en="Weather API Key (OpenWeatherMap)" data-tl="Weather API Key (OpenWeatherMap)">Weather API Key (OpenWeatherMap)</label>
                 <input type="password" name="weather_api_key" value="{{ config.weather_api_key }}"
-                    placeholder="Enter API key...">
+                    data-en-placeholder="Enter API key..." data-tl-placeholder="Ilagay ang API key..." placeholder="Enter API key...">
             </div>
             <div class="form-group">
-                <label>Forecast Mode</label>
+                <label data-en="Forecast Mode" data-tl="Mode ng Forecast">Forecast Mode</label>
                 <select name="forecast_mode">
-                    <option value="Standard"     {% if config.forecast_mode == 'Standard'     %}selected{% endif %}>Standard</option>
-                    <option value="Aggressive"   {% if config.forecast_mode == 'Aggressive'   %}selected{% endif %}>Aggressive</option>
-                    <option value="Conservative" {% if config.forecast_mode == 'Conservative' %}selected{% endif %}>Conservative</option>
+                    <option value="Standard"     {% if config.forecast_mode == 'Standard'     %}selected{% endif %} data-en="Standard" data-tl="Standard">Standard</option>
+                    <option value="Aggressive"   {% if config.forecast_mode == 'Aggressive'   %}selected{% endif %} data-en="Aggressive" data-tl="Agresibo">Aggressive</option>
+                    <option value="Conservative" {% if config.forecast_mode == 'Conservative' %}selected{% endif %} data-en="Conservative" data-tl="Konserbatibo">Conservative</option>
                 </select>
             </div>
         </div>
@@ -155,27 +155,27 @@
     <div class="settings-card full-width">
         <div class="settings-card-header">
             <i class='bx bx-shield-quarter' style="background: var(--red-dim); color: var(--red);"></i>
-            <h3>Security Credentials</h3>
+            <h3 data-en="Security Credentials" data-tl="Kredensyal ng Seguridad">Security Credentials</h3>
         </div>
         <div class="settings-card-body">
             <div class="password-grid">
                 <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" name="new_password" placeholder="Enter new password">
+                    <label data-en="New Password" data-tl="Bagong Password">New Password</label>
+                    <input type="password" name="new_password" data-en-placeholder="Enter new password" data-tl-placeholder="Ilagay ang bagong password" placeholder="Enter new password">
                 </div>
                 <div class="form-group">
-                    <label>Confirm Password</label>
-                    <input type="password" name="confirm_password" placeholder="Repeat new password">
+                    <label data-en="Confirm Password" data-tl="Kumpirmahin ang Password">Confirm Password</label>
+                    <input type="password" name="confirm_password" data-en-placeholder="Repeat new password" data-tl-placeholder="Ulitin ang bagong password" placeholder="Repeat new password">
                 </div>
             </div>
             <div class="form-group" style="margin-top: 4px;">
-                <label>Current Password (Required to Verify Change)</label>
+                <label data-en="Current Password (Required to Verify Change)" data-tl="Kasalukuyang Password (Kailangan para Kumpirmahin)">Current Password (Required to Verify Change)</label>
                 <input type="password" name="current_password"
                     style="border-color: rgba(255,61,90,0.4);"
-                    placeholder="Enter current password">
+                    data-en-placeholder="Enter current password" data-tl-placeholder="Ilagay ang kasalukuyang password" placeholder="Enter current password">
             </div>
             <button type="submit" name="update_password" class="btn btn-ghost" style="margin-top: 8px; justify-content: center; width: 100%;">
-                <i class='bx bx-lock-alt'></i> Change Password
+                <i class='bx bx-lock-alt'></i> <span data-en="Change Password" data-tl="Palitan ang Password">Change Password</span>
             </button>
         </div>
     </div>

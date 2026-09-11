@@ -110,67 +110,67 @@
 
 <div class="page-header">
     <div>
-        <h1>Data Management</h1>
-        <p>Historical sales & inventory data ingestion</p>
+        <h1 data-en="Data Management" data-tl="Pamamahala ng Datos">Data Management</h1>
+        <p data-en="Historical sales &amp; inventory data ingestion" data-tl="Pag-upload ng datos ng benta &amp; imbentaryo">Historical sales & inventory data ingestion</p>
     </div>
 </div>
 
 <div class="stats-grid">
     <div class="stat-card blue">
-        <div class="stat-label">Units Sold Today</div>
+        <div class="stat-label" data-en="Units Sold Today" data-tl="Naibentang Units Ngayon">Units Sold Today</div>
         <div class="stat-value">{{ units_sold_today|default:0|intcomma }}</div>
-        <div class="stat-sub">As of latest data</div>
+        <div class="stat-sub" data-en="As of latest data" data-tl="Batay sa pinakabagong datos">As of latest data</div>
     </div>
     <div class="stat-card teal">
-        <div class="stat-label">Orders Today</div>
+        <div class="stat-label" data-en="Orders Today" data-tl="Order Ngayon">Orders Today</div>
         <div class="stat-value">{{ total_orders_today|default:0|intcomma }}</div>
-        <div class="stat-sub">Transactions logged</div>
+        <div class="stat-sub" data-en="Transactions logged" data-tl="Naitalang transaksyon">Transactions logged</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-label">Weekly Revenue</div>
+        <div class="stat-label" data-en="Weekly Revenue" data-tl="Lingguhang Kita">Weekly Revenue</div>
         <div class="stat-value">₱{{ weekly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub">Last 7 days</div>
+        <div class="stat-sub" data-en="Last 7 days" data-tl="Huling 7 araw">Last 7 days</div>
     </div>
     <div class="stat-card amber">
-        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-label" data-en="Monthly Revenue" data-tl="Buwanang Kita">Monthly Revenue</div>
         <div class="stat-value">₱{{ monthly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub">Top seller: {{ top_product }}</div>
+        <div class="stat-sub"><span data-en="Top seller" data-tl="Pinakabenta">Top seller</span>: {{ top_product }}</div>
     </div>
 </div>
 
 <div class="upload-layout">
     <div class="card upload-dropzone">
         <i class='bx bx-cloud-upload'></i>
-        <h3>Upload Historical CSV</h3>
-        <p>Ensure your CSV follows the required column format before confirming.</p>
+        <h3 data-en="Upload Historical CSV" data-tl="Mag-upload ng CSV">Upload Historical CSV</h3>
+        <p data-en="Ensure your CSV follows the required column format before confirming." data-tl="Siguraduhing tama ang column format ng CSV bago kumpirmahin.">Ensure your CSV follows the required column format before confirming.</p>
 
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="file" name="csv_file" id="fileInput" hidden accept=".csv">
 
             <button type="button" class="btn btn-ghost" onclick="document.getElementById('fileInput').click()">
-                <i class='bx bx-file'></i> Browse Files
+                <i class='bx bx-file'></i> <span data-en="Browse Files" data-tl="Mag-browse ng File">Browse Files</span>
             </button>
 
             <div id="fileName" class="file-name"></div>
 
             <div style="margin-top: 18px;">
                 <button type="submit" class="btn btn-primary" id="uploadBtn" style="display:none;">
-                    <i class='bx bx-upload'></i> Confirm & Process Upload
+                    <i class='bx bx-upload'></i> <span data-en="Confirm &amp; Process Upload" data-tl="Kumpirmahin &amp; I-proseso">Confirm & Process Upload</span>
                 </button>
             </div>
         </form>
     </div>
 
     <div class="card">
-        <h3 style="font-family:'Syne',sans-serif; font-size:14px; font-weight:700;">CSV File Schema</h3>
+        <h3 style="font-family:'Syne',sans-serif; font-size:14px; font-weight:700;" data-en="CSV File Schema" data-tl="Schema ng CSV File">CSV File Schema</h3>
         <ul class="schema-list">
-            <li><strong>Date</strong> — Format: YYYY-MM-DD</li>
-            <li><strong>Product Name</strong> — Text string</li>
-            <li><strong>Quantity</strong> — Integer value</li>
-            <li><strong>Unit Price</strong> — Decimal (no ₱ symbol in file)</li>
+            <li><strong>Date</strong> — <span data-en="Format: YYYY-MM-DD" data-tl="Format: YYYY-MM-DD">Format: YYYY-MM-DD</span></li>
+            <li><strong>Product Name</strong> — <span data-en="Text string" data-tl="Text string">Text string</span></li>
+            <li><strong>Quantity</strong> — <span data-en="Integer value" data-tl="Buong numero">Integer value</span></li>
+            <li><strong>Unit Price</strong> — <span data-en="Decimal (no ₱ symbol in file)" data-tl="Decimal (walang simbolong ₱ sa file)">Decimal (no ₱ symbol in file)</span></li>
         </ul>
-        <p style="font-size:11px; color:var(--text-muted); margin-top:14px;">
+        <p style="font-size:11px; color:var(--text-muted); margin-top:14px;" data-en="Rows already in the database (same product + date) are skipped, not duplicated." data-tl="Ang mga row na nasa database na (parehong produkto + petsa) ay lalaktawan, hindi idudoble.">
             Rows already in the database (same product + date) are skipped, not duplicated.
         </p>
     </div>
@@ -178,25 +178,25 @@
 
 <div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
     <div class="table-card-header">
-        <h3>Historical Data Log</h3>
+        <h3 data-en="Historical Data Log" data-tl="Talaan ng Nakaraang Datos">Historical Data Log</h3>
         <form method="get" class="filter-bar" style="margin-bottom:0;">
             <select name="month" class="filter-select" onchange="this.form.submit()">
-                <option value="">All Months</option>
-                <option value="1"  {% if selected_month == '1' %}selected{% endif %}>January</option>
-                <option value="2"  {% if selected_month == '2' %}selected{% endif %}>February</option>
-                <option value="3"  {% if selected_month == '3' %}selected{% endif %}>March</option>
-                <option value="4"  {% if selected_month == '4' %}selected{% endif %}>April</option>
-                <option value="5"  {% if selected_month == '5' %}selected{% endif %}>May</option>
-                <option value="6"  {% if selected_month == '6' %}selected{% endif %}>June</option>
-                <option value="7"  {% if selected_month == '7' %}selected{% endif %}>July</option>
-                <option value="8"  {% if selected_month == '8' %}selected{% endif %}>August</option>
-                <option value="9"  {% if selected_month == '9' %}selected{% endif %}>September</option>
-                <option value="10" {% if selected_month == '10' %}selected{% endif %}>October</option>
-                <option value="11" {% if selected_month == '11' %}selected{% endif %}>November</option>
-                <option value="12" {% if selected_month == '12' %}selected{% endif %}>December</option>
+                <option value="" data-en="All Months" data-tl="Lahat ng Buwan">All Months</option>
+                <option value="1"  {% if selected_month == '1' %}selected{% endif %} data-en="January" data-tl="Enero">January</option>
+                <option value="2"  {% if selected_month == '2' %}selected{% endif %} data-en="February" data-tl="Pebrero">February</option>
+                <option value="3"  {% if selected_month == '3' %}selected{% endif %} data-en="March" data-tl="Marso">March</option>
+                <option value="4"  {% if selected_month == '4' %}selected{% endif %} data-en="April" data-tl="Abril">April</option>
+                <option value="5"  {% if selected_month == '5' %}selected{% endif %} data-en="May" data-tl="Mayo">May</option>
+                <option value="6"  {% if selected_month == '6' %}selected{% endif %} data-en="June" data-tl="Hunyo">June</option>
+                <option value="7"  {% if selected_month == '7' %}selected{% endif %} data-en="July" data-tl="Hulyo">July</option>
+                <option value="8"  {% if selected_month == '8' %}selected{% endif %} data-en="August" data-tl="Agosto">August</option>
+                <option value="9"  {% if selected_month == '9' %}selected{% endif %} data-en="September" data-tl="Setyembre">September</option>
+                <option value="10" {% if selected_month == '10' %}selected{% endif %} data-en="October" data-tl="Oktubre">October</option>
+                <option value="11" {% if selected_month == '11' %}selected{% endif %} data-en="November" data-tl="Nobyembre">November</option>
+                <option value="12" {% if selected_month == '12' %}selected{% endif %} data-en="December" data-tl="Disyembre">December</option>
             </select>
             <select name="year" class="filter-select" onchange="this.form.submit()">
-                <option value="">All Years</option>
+                <option value="" data-en="All Years" data-tl="Lahat ng Taon">All Years</option>
                 {% for y in available_years %}
                 <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
@@ -206,10 +206,10 @@
     <table style="border:none; border-radius:0;">
         <thead>
             <tr>
-                <th>Product Name</th>
-                <th style="text-align:center;">Quantity</th>
-                <th style="text-align:center;">Price</th>
-                <th style="text-align:center;">Date Sold</th>
+                <th data-en="Product Name" data-tl="Pangalan ng Produkto">Product Name</th>
+                <th style="text-align:center;" data-en="Quantity" data-tl="Dami">Quantity</th>
+                <th style="text-align:center;" data-en="Price" data-tl="Presyo">Price</th>
+                <th style="text-align:center;" data-en="Date Sold" data-tl="Petsa ng Benta">Date Sold</th>
             </tr>
         </thead>
         <tbody>
@@ -222,7 +222,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="text-align:center; padding:40px; color:var(--text-dim);">
+                <td colspan="4" style="text-align:center; padding:40px; color:var(--text-dim);" data-en="No historical records found for this filter." data-tl="Walang natagpuang datos para sa filter na ito.">
                     No historical records found for this filter.
                 </td>
             </tr>
@@ -238,7 +238,8 @@
 
     fileInput.addEventListener("change", function () {
         if (this.files.length > 0) {
-            fileName.textContent = "✓ Selected: " + this.files[0].name;
+            const label = (localStorage.getItem('cc-lang') || 'en') === 'tl' ? 'Napili' : 'Selected';
+            fileName.textContent = "✓ " + label + ": " + this.files[0].name;
             uploadBtn.style.display = "inline-flex";
         } else {
             fileName.textContent = "";
