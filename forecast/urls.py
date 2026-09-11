@@ -3,5 +3,6 @@ from . import views
 urlpatterns = [
     path('',views.forecast_view, name= 'view-forecast'),
     path('predict-api/', views.get_prediction_api, name='predict-api'),
+    path('monthly-api/', views.get_monthly_forecast_api, name='monthly-forecast-api'),
 
 ]
