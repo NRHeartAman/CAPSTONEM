@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from datetime import date, timedelta
+from datetime import date
 
 
 class Event(models.Model):
