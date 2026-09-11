@@ -151,6 +151,36 @@
         </div>
     </div>
 
+    <!-- ACCOUNT EMAIL -->
+    <div class="settings-card">
+        <div class="settings-card-header">
+            <i class='bx bx-envelope' style="background: var(--teal-dim, rgba(13,143,160,0.10)); color: var(--teal, #0d8fa0);"></i>
+            <h3 data-en="Account Email" data-tl="Email ng Account">Account Email</h3>
+        </div>
+        <div class="settings-card-body">
+            <p style="font-size:12px; color:var(--text-muted); margin:-4px 0 14px;" data-en="Where request alerts and password resets for this account are sent." data-tl="Dito ipinapadala ang alerto sa request at password reset para sa account na ito.">
+                Where request alerts and password resets for this account are sent.
+            </p>
+            <div class="form-group">
+                <label data-en="Current Email" data-tl="Kasalukuyang Email">Current Email</label>
+                <input type="text" value="{{ request.user.email|default:'(none set)' }}" disabled class="disabled-input">
+            </div>
+            <div class="form-group">
+                <label data-en="New Email" data-tl="Bagong Email">New Email</label>
+                <input type="email" name="new_email" data-en-placeholder="your.real.email@example.com" data-tl-placeholder="ang-totoong-email-mo@example.com" placeholder="your.real.email@example.com">
+            </div>
+            <div class="form-group" style="margin-top: 4px;">
+                <label data-en="Current Password (Required to Verify Change)" data-tl="Kasalukuyang Password (Kailangan para Kumpirmahin)">Current Password (Required to Verify Change)</label>
+                <input type="password" name="current_password_for_email"
+                    style="border-color: rgba(255,61,90,0.4);"
+                    data-en-placeholder="Enter current password" data-tl-placeholder="Ilagay ang kasalukuyang password" placeholder="Enter current password">
+            </div>
+            <button type="submit" name="update_email" class="btn btn-ghost" style="margin-top: 8px; justify-content: center; width: 100%;">
+                <i class='bx bx-envelope'></i> <span data-en="Update Email" data-tl="I-update ang Email">Update Email</span>
+            </button>
+        </div>
+    </div>
+
     <!-- SECURITY -->
     <div class="settings-card full-width">
         <div class="settings-card-header">

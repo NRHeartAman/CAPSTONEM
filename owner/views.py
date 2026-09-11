@@ -25,7 +25,7 @@ from django.contrib.auth import update_session_auth_hash, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from .models import SystemSetting, StaffInvite, InventoryRequest, EventRequest, SalesUploadRequest
-from accounts.models import ActivityLog, EmployeeProfile
+from accounts.models import ActivityLog, EmployeeProfile, User
 from sales.models import SalesRecord
 from django.db.models import Sum, F, Min, Max
 from django.utils import timezone
@@ -757,6 +757,21 @@ def settings_view(request):
             config.store_lon       = request.POST.get('store_lon')
             config.save()
             messages.success(request, 'Configuration updated.')
+
+        elif 'update_email' in request.POST:
+            new_email     = request.POST.get('new_email', '').strip()
+            current_pass  = request.POST.get('current_password_for_email')
+
+            if not new_email:
+                messages.error(request, 'Please enter an email address. Maglagay ng email address.')
+            elif not request.user.check_password(current_pass):
+                messages.error(request, 'Incorrect current password. Mali ang kasalukuyang password.')
+            elif User.objects.filter(email=new_email).exclude(pk=request.user.pk).exists():
+                messages.error(request, 'That email is already in use by another account. Nagamit na ang email na iyan.')
+            else:
+                request.user.email = new_email
+                request.user.save(update_fields=['email'])
+                messages.success(request, f'Account email updated to {new_email}. Na-update na ang email.')
 
         elif 'update_password' in request.POST:
             current_pass = request.POST.get('current_password')
