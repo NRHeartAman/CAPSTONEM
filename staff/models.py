@@ -11,6 +11,7 @@ class PrepTask(models.Model):
         ('manual',      'Manual / Seeded'),
         ('low_stock',   'Auto – Low Stock'),
         ('best_seller', 'Auto – Best Seller'),
+        ('forecast',    'Auto – Tomorrow\'s Outlook'),
     ]
 
     title        = models.CharField(max_length=200)

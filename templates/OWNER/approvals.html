@@ -4,15 +4,15 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 data-en="Staff Requests" data-tl="Mga Hiling ng Staff">Staff Requests</h1>
+        <h1 data-en="Approvals" data-tl="Mga Aprubasyon">Approvals</h1>
         <p data-en="Review and approve inventory &amp; event submissions from staff" data-tl="Suriin at aprubahan ang mga hiling ng staff sa imbentaryo at event">Review and approve inventory & event submissions from staff</p>
     </div>
 </div>
 <!-- PENDING INVENTORY REQUESTS -->
 <div class="table-card" style="margin-bottom: 24px;">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Pending Inventory Requests" data-tl="Naghihintay na Hiling sa Imbentaryo">Pending Inventory Requests</h3>
-        <span class="badge badge-amber">{{ pending_inventory.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
+        <h3 style="font-family:var(--font-main);font-size:14px;font-weight:700;" data-en="Pending Inventory Requests" data-tl="Naghihintay na Hiling sa Imbentaryo">Pending Inventory Requests</h3>
+        <span class="badge badge-orange">🟠 {{ pending_inventory.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
     </div>
     <table>
         <thead>
@@ -36,12 +36,13 @@
                 <td>{{ req.total_stock }}</td>
                 <td>{{ req.unit }}</td>
                 <td><span class="badge badge-blue">{{ req.category }}</span></td>
-                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y, g:i A" }}</td>
                 <td style="text-align:center;">
-                    <form method="POST" action="{% url 'approve-inventory-request' req.pk %}" style="display:inline;">
+                    <form method="POST" action="{% url 'approve-inventory-request' req.pk %}" style="display:inline;" class="approval-form">
                         {% csrf_token %}
-                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
-                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ <span data-en="Reject" data-tl="Tanggihan">Reject</span></button>
+                        <input type="hidden" name="reject_reason" class="reject-reason-field">
+                        <button type="submit" name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
+                        <button type="button" class="btn btn-ghost reject-btn" style="padding:6px 14px;font-size:12px;color:var(--red);" data-en="✕ Reject" data-tl="✕ Tanggihan">✕ Reject</button>
                     </form>
                 </td>
             </tr>
@@ -57,15 +58,16 @@
 <!-- PENDING EVENT REQUESTS -->
 <div class="table-card" style="margin-bottom: 24px;">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Pending Event Requests" data-tl="Naghihintay na Hiling sa Event">Pending Event Requests</h3>
-        <span class="badge badge-amber">{{ pending_events.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
+        <h3 style="font-family:var(--font-main);font-size:14px;font-weight:700;" data-en="Pending Event Requests" data-tl="Naghihintay na Hiling sa Event">Pending Event Requests</h3>
+        <span class="badge badge-orange">🟠 {{ pending_events.count }} <span data-en="pending" data-tl="naghihintay">pending</span></span>
     </div>
     <table>
         <thead>
             <tr>
                 <th data-en="Requested By" data-tl="Hiniling Ni">Requested By</th>
                 <th data-en="Event Name" data-tl="Pangalan ng Event">Event Name</th>
-                <th data-en="Event Date" data-tl="Petsa ng Event">Event Date</th>
+                <th data-en="Start – End" data-tl="Simula – Katapusan">Start – End</th>
+                <th data-en="Location" data-tl="Lokasyon">Location</th>
                 <th data-en="Description" data-tl="Deskripsyon">Description</th>
                 <th data-en="Submitted" data-tl="Isinumite">Submitted</th>
                 <th style="text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
@@ -76,20 +78,22 @@
             <tr>
                 <td><span class="badge badge-purple">{{ req.requested_by.username }}</span></td>
                 <td><strong>{{ req.event_name }}</strong></td>
-                <td style="color:var(--text-muted);">{{ req.event_date }}</td>
+                <td style="color:var(--text-muted); font-size:13px;">{{ req.event_date|date:"M d" }}{% if req.effective_end_date != req.event_date %} – {{ req.effective_end_date|date:"M d" }}{% endif %}{% if req.start_time %}<br>{{ req.start_time|time:"g:i A" }}{% if req.end_time %} – {{ req.end_time|time:"g:i A" }}{% endif %}{% endif %}</td>
+                <td style="color:var(--text-muted); font-size:13px;">{{ req.location|default:"—" }}</td>
                 <td style="font-size:13px;color:var(--text-muted);">{{ req.description|default:"—" }}</td>
-                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y, g:i A" }}</td>
                 <td style="text-align:center;">
-                    <form method="POST" action="{% url 'approve-event-request' req.pk %}" style="display:inline;">
+                    <form method="POST" action="{% url 'approve-event-request' req.pk %}" style="display:inline;" class="approval-form">
                         {% csrf_token %}
-                        <button name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
-                        <button name="action" value="reject" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;color:var(--red);">✕ <span data-en="Reject" data-tl="Tanggihan">Reject</span></button>
+                        <input type="hidden" name="reject_reason" class="reject-reason-field">
+                        <button type="submit" name="action" value="approve" class="btn btn-primary" style="padding:6px 14px;font-size:12px;">✓ <span data-en="Approve" data-tl="Aprubahan">Approve</span></button>
+                        <button type="button" class="btn btn-ghost reject-btn" style="padding:6px 14px;font-size:12px;color:var(--red);" data-en="✕ Reject" data-tl="✕ Tanggihan">✕ Reject</button>
                     </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No pending event requests." data-tl="Walang naghihintay na hiling sa event.">No pending event requests.</td>
+                <td colspan="7" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No pending event requests." data-tl="Walang naghihintay na hiling sa event.">No pending event requests.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -99,7 +103,7 @@
 <!-- HISTORY -->
 <div class="table-card">
     <div class="table-card-header" style="padding:18px 22px;border-bottom:1px solid var(--border);">
-        <h3 style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;" data-en="Recent Decisions" data-tl="Kamakailang Desisyon">Recent Decisions</h3>
+        <h3 style="font-family:var(--font-main);font-size:14px;font-weight:700;" data-en="Recent Decisions" data-tl="Kamakailang Desisyon">Recent Decisions</h3>
     </div>
     <table>
         <thead>
@@ -108,6 +112,7 @@
                 <th data-en="Item / Event" data-tl="Item / Event">Item / Event</th>
                 <th data-en="Requested By" data-tl="Hiniling Ni">Requested By</th>
                 <th data-en="Status" data-tl="Katayuan">Status</th>
+                <th data-en="Reason (if rejected)" data-tl="Dahilan (kung tinanggihan)">Reason (if rejected)</th>
                 <th data-en="Date" data-tl="Petsa">Date</th>
             </tr>
         </thead>
@@ -121,7 +126,8 @@
                     {% if req.status == 'approved' %}<span class="badge badge-green" data-en="Approved" data-tl="Inaprubahan">Approved</span>
                     {% else %}<span class="badge badge-red" data-en="Rejected" data-tl="Tinanggihan">Rejected</span>{% endif %}
                 </td>
-                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="font-size:12px;color:var(--text-muted);max-width:220px;">{{ req.rejection_reason|default:"—" }}</td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y, g:i A" }}</td>
             </tr>
             {% endfor %}
             {% for req in all_events %}
@@ -133,15 +139,76 @@
                     {% if req.status == 'approved' %}<span class="badge badge-green" data-en="Approved" data-tl="Inaprubahan">Approved</span>
                     {% else %}<span class="badge badge-red" data-en="Rejected" data-tl="Tinanggihan">Rejected</span>{% endif %}
                 </td>
-                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y" }}</td>
+                <td style="font-size:12px;color:var(--text-muted);max-width:220px;">{{ req.rejection_reason|default:"—" }}</td>
+                <td style="color:var(--text-muted);font-size:13px;">{{ req.created_at|date:"M d, Y, g:i A" }}</td>
             </tr>
             {% endfor %}
             {% if not all_inventory and not all_events %}
             <tr>
-                <td colspan="5" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No decisions made yet." data-tl="Wala pang desisyong ginawa.">No decisions made yet.</td>
+                <td colspan="6" style="text-align:center;padding:32px;color:var(--text-dim);font-size:13px;" data-en="No decisions made yet." data-tl="Wala pang desisyong ginawa.">No decisions made yet.</td>
             </tr>
             {% endif %}
         </tbody>
     </table>
 </div>
+
+<!-- REJECT REASON MODAL -->
+<div id="rejectReasonModal" class="modal">
+    <div class="modal-box">
+        <h2 data-en="Reason for Rejection" data-tl="Dahilan ng Pagtanggi">Reason for Rejection</h2>
+        <p style="font-size:12px;color:var(--text-muted);margin:-6px 0 14px;" data-en="This will be sent to the staff member who submitted the request." data-tl="Ipapadala ito sa staff na nagsumite ng hiling.">
+            This will be sent to the staff member who submitted the request.
+        </p>
+        <div class="form-group">
+            <label data-en="Reason (required)" data-tl="Dahilan (kailangan)">Reason (required)</label>
+            <textarea id="rejectReasonText" class="reason-textarea" rows="4"
+                data-en-placeholder="e.g. Budget limit reached this week..." data-tl-placeholder="hal. Naabot na ang limitasyon sa budget ngayong linggo..."
+                placeholder="e.g. Budget limit reached this week..."></textarea>
+            <p id="rejectReasonError" style="display:none;color:var(--red);font-size:12px;margin-top:6px;" data-en="Please enter a reason." data-tl="Maglagay ng dahilan.">Please enter a reason.</p>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button type="button" class="btn btn-primary" style="flex:1; background:var(--red);" onclick="confirmRejectReason()">
+                <i class='bx bx-x'></i> <span data-en="Confirm Reject" data-tl="Kumpirmahin ang Pagtanggi">Confirm Reject</span>
+            </button>
+            <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('rejectReasonModal')">
+                <span data-en="Cancel" data-tl="Kanselahin">Cancel</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let pendingRejectForm = null;
+
+document.querySelectorAll('.reject-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        pendingRejectForm = btn.closest('form');
+        document.getElementById('rejectReasonText').value = '';
+        document.getElementById('rejectReasonError').style.display = 'none';
+        openModal('rejectReasonModal');
+    });
+});
+
+function confirmRejectReason() {
+    const reason = document.getElementById('rejectReasonText').value.trim();
+    if (!reason) {
+        document.getElementById('rejectReasonError').style.display = 'block';
+        return;
+    }
+    if (pendingRejectForm) {
+        pendingRejectForm.querySelector('.reject-reason-field').value = reason;
+        let actionField = pendingRejectForm.querySelector('.reject-action-field');
+        if (!actionField) {
+            actionField = document.createElement('input');
+            actionField.type = 'hidden';
+            actionField.name = 'action';
+            actionField.className = 'reject-action-field';
+            pendingRejectForm.appendChild(actionField);
+        }
+        actionField.value = 'reject';
+        pendingRejectForm.submit();
+    }
+    closeModal('rejectReasonModal');
+}
+</script>
 {% endblock %}

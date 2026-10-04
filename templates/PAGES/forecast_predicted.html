@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}CraveCast - Restock Plan{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-banner {
+        background: var(--amber-dim);
+        border: 1px solid rgba(245,158,11,0.35);
+        border-left: 3px solid var(--amber);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .event-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .event-banner-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
+    .event-banner-text { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+    .period-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: var(--blue-dim);
+        color: var(--blue);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .order-qty {
+        font-family: var(--font-main);
+        font-size: 15px;
+        font-weight: 800;
+    }
+    .order-qty.zero { color: var(--text-muted); font-weight: 600; }
+    .order-qty.needed { color: var(--red); }
+
+    .pending-note {
+        font-size: 11px;
+        color: var(--amber);
+        font-weight: 600;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); }
+    .empty-state .emoji { font-size:40px; margin-bottom:12px; }
+    .empty-state p { font-size:13px; margin-top:6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1 data-en="Restock Plan" data-tl="Plano sa Pag-restock">Restock Plan</h1>
+        <p data-en="What to buy for tomorrow, based on the forecast, your recipes and current stock" data-tl="Ano ang bibilhin para bukas, base sa forecast, recipe at kasalukuyang stock">What to buy for tomorrow, based on the forecast, your recipes and current stock</p>
+    </div>
+</div>
+
+{% if report.has_enough_data %}
+<div class="period-pill">
+    🗓️ <span data-en="Forecast period" data-tl="Panahon ng forecast">Forecast period</span>:
+    {{ report.day_label }}, {{ report.target_date|date:"M d, Y" }}
+</div>
+{% endif %}
+
+{% if report.event_note %}
+<div class="event-banner">
+    <div class="event-banner-icon">🎉</div>
+    <div>
+        <div class="event-banner-title" data-en="Upcoming Event" data-tl="Paparating na Event">Upcoming Event</div>
+        <div class="event-banner-text">{{ report.event_note }}</div>
+    </div>
+</div>
+{% endif %}
+
+{% if not report.has_enough_data %}
+<div class="empty-state">
+    <div class="emoji">🔮</div>
+    <p data-en="Not enough sales history yet to predict demand." data-tl="Wala pang sapat na kasaysayan ng benta para tantiyahin ang demand.">Not enough sales history yet to predict demand.</p>
+    <p data-en="Upload at least 5 days of sales data to enable this." data-tl="Mag-upload ng kahit 5 araw na sales data para paganahin ito.">Upload at least 5 days of sales data to enable this.</p>
+</div>
+{% elif report.products %}
+
+{# ── What to buy: per ingredient, since products share ingredients ── #}
+<h3 style="font-size:15px; font-weight:700; margin:4px 0 10px;">🛒 What to buy for {{ report.day_label }}</h3>
+{% if to_buy %}
+<div style="overflow-x:auto; margin-bottom:28px;">
+<table>
+    <thead>
+        <tr>
+            <th>Ingredient</th>
+            <th>On hand</th>
+            <th>Expected use</th>
+            <th>Buy</th>
+            {% if show_costs %}<th>Est. cost</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in to_buy %}
+        <tr>
+            <td style="font-weight:600;">{{ i.item }}{% if i.is_expired %} <span class="badge badge-red">Expired</span>{% endif %}</td>
+            <td style="color:var(--text-muted);">{{ i.current_stock|floatformat:"-2"|intcomma }} {{ i.unit }}</td>
+            <td style="color:var(--text-muted);">{{ i.predicted_use|floatformat:"-2"|intcomma }} {{ i.unit }}</td>
+            <td>
+                <span class="order-qty needed">{{ i.to_buy|floatformat:"-2"|intcomma }} {{ i.unit }}</span>
+                {% if i.to_buy_packages %}<div style="font-size:11px; color:var(--text-muted);">= {{ i.to_buy_packages }} × {{ i.package_unit|default:"pack" }} ({{ i.package_size|floatformat:"-2" }} {{ i.unit }} each)</div>{% endif %}
+            </td>
+            {% if show_costs %}<td style="color:var(--text-muted);">{% if i.est_cost %}₱{{ i.est_cost|floatformat:2|intcomma }}{% else %}—{% endif %}</td>{% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Enough to cover tomorrow's expected sales and stay at each item's own low-stock limit, rounded up to whole packages.</p>
+</div>
+{% else %}
+<p style="font-size:13px; color:var(--text-muted); margin-bottom:28px;">✅ Nothing to buy — current stock covers tomorrow's expected sales and stays above every item's low-stock limit.</p>
+{% endif %}
+
+<h3 style="font-size:15px; font-weight:700; margin:4px 0 10px;">🍵 Per product</h3>
+<div style="overflow-x:auto;">
+<table>
+    <thead>
+        <tr>
+            <th data-en="Product" data-tl="Produkto">Product</th>
+            <th data-en="Predicted Demand" data-tl="Inaasahang Demand">Predicted Demand</th>
+            <th data-en="Current Stock" data-tl="Kasalukuyang Stock">Current Stock</th>
+            <th data-en="Stock Gap" data-tl="Kulang sa Stock">Stock Gap</th>
+            <th data-en="Can't Make" data-tl="Hindi Magagawa">Can't Make</th>
+            <th data-en="Status" data-tl="Katayuan">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in report.products %}
+        <tr>
+            <td style="font-weight:600; font-size:14px;">{{ p.product }}</td>
+            <td style="color:var(--text-muted);">{{ p.predicted_demand|intcomma }} <span data-en="servings" data-tl="serving">servings</span></td>
+            <td style="color:var(--text-muted);">{{ p.current_stock|intcomma }} <span data-en="servings" data-tl="serving">servings</span></td>
+            <td>
+                {% if p.stock_gap > 0 %}
+                    <span class="badge badge-amber">{{ p.stock_gap|intcomma }}</span>
+                {% else %}
+                    <span class="badge badge-green">0</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if p.recommended_order > 0 %}
+                    <span class="order-qty needed">{{ p.recommended_order|intcomma }} serving{{ p.recommended_order|pluralize }}</span>
+                    {% if p.limiting_item %}<div style="font-size:11px; color:var(--text-muted);">not enough {{ p.limiting_item }}</div>{% endif %}
+                    {% if p.has_pending_request %}<span class="pending-note">⏳ Restock already requested</span>{% endif %}
+                {% else %}
+                    <span class="order-qty zero">— <span data-en="No order needed" data-tl="Walang kailangang order">No order needed</span></span>
+                {% endif %}
+            </td>
+            <td>
+                {% if p.recommended_order > 0 and p.stock_gap >= p.predicted_demand %}
+                    <span class="badge badge-red">🔴 <span data-en="Out of Stock" data-tl="Naubos">Out of Stock</span></span>
+                {% elif p.recommended_order > 0 %}
+                    <span class="badge badge-amber">🟡 <span data-en="Short" data-tl="Kulang">Short</span></span>
+                {% else %}
+                    <span class="badge badge-green">🟢 <span data-en="Good" data-tl="Maayos">Good</span></span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="emoji">🍵</div>
+    <p data-en="No product recipes match current sales data yet." data-tl="Walang recipe na tumutugma sa kasalukuyang datos ng benta.">No product recipes match current sales data yet.</p>
+    <p data-en="Add recipes in the Recipes page to connect products to ingredients." data-tl="Magdagdag ng recipe sa Recipes page para ikonekta ang produkto sa sangkap.">Add recipes in the Recipes page to connect products to ingredients.</p>
+</div>
+{% endif %}
+
+{% endblock %}

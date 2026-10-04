@@ -26,10 +26,20 @@ class DashboardStatsTests(TestCase):
         SalesRecord.objects.create(product_name='Tea', sale_date='2026-03-03',
                                     quantity=3, price=80, temp_c=28)
 
+        from owner.views import _get_dashboard_context
+        ctx = _get_dashboard_context()
+        # Latest day with sales = Mar 3: only the Tea row (3 × ₱80)
+        self.assertEqual(ctx['daily_sales'], 240.0)
+        self.assertEqual(ctx['daily_sold'], 3)
+        # Last 7 / last 30 days both cover Mar 1–3: 500 + 700 + 240
+        self.assertEqual(ctx['weekly_revenue'], 1440.0)
+        self.assertEqual(ctx['monthly_revenue'], 1440.0)
+        self.assertEqual(ctx['monthly_units'], 15)
+
         c = Client(); c.force_login(self.owner)
         html = c.get('/owner/').content.decode()
-        self.assertIn('data-count-target="15"', html)   # 5+7+3 units
-        self.assertIn('data-count-target="3"', html)     # 3 orders
+        self.assertIn('data-count-target="240.0"', html)
+        self.assertIn('Sales · Mar 3', html)   # dated, not "Today's Sales"
 
     def test_low_stock_dashboard_uses_own_threshold(self):
         Inventory.objects.create(item_name='HighThreshold', unit='kg', total_stock=50,

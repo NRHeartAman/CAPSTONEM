@@ -15,8 +15,8 @@ KEY FIXES:
      → Prevents float comparison issues causing false "invalid" uploads
   7. FIXED: temperature API calls are now batched per unique date
      → Prevents per-row HTTP timeout killing the upload
-  8. FIXED: weekly_sales now uses actual calendar week (Mon–Sun) of ref_date
-     → Prevents weekly == monthly when all data falls in the same month
+  8. Daily / weekly / monthly are the latest day / last 7 / last 30 days,
+     all ending on the latest sales date — so monthly ≥ weekly ≥ daily
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -28,12 +28,13 @@ from django.conf import settings
 from .models import SystemSetting, StaffInvite, InventoryRequest, EventRequest, SalesUploadRequest
 from accounts.models import ActivityLog, EmployeeProfile, User
 from sales.models import SalesRecord
-from django.db.models import Sum, F, Min, Max
+from django.db.models import Sum, F, Min, Max, Avg
 from django.utils import timezone
 from django.utils import timezone as tz
 from datetime import timedelta, datetime, date
 from inventory.models import Inventory
 from inventory.services import deduct_inventory_for_sales
+from accounts.decorators import owner_required_json
 import json
 import io
 import csv
@@ -55,60 +56,23 @@ def _get_dashboard_context():
     earliest_date = bounds['earliest'] or today
     has_data      = bounds['latest'] is not None
 
-    # ── DAILY: Average revenue per day = Total Revenue ÷ Days with data ──
-    total_revenue_all = float(
-        SalesRecord.objects.aggregate(
-            total=Sum(F('quantity') * F('price'))
-        )['total'] or 0
-    )
-    total_units_all  = SalesRecord.objects.aggregate(total=Sum('quantity'))['total'] or 0
-    total_orders_all = SalesRecord.objects.count()
-    days_with_data   = max(SalesRecord.objects.values('sale_date').distinct().count(), 1)
+    # All windows end on ref_date (the latest day that has sales), and each
+    # longer window contains the shorter one — so 30-day ≥ 7-day ≥ 1-day always.
+    def _window(start):
+        qs = SalesRecord.objects.filter(sale_date__gte=start, sale_date__lte=ref_date)
+        agg = qs.aggregate(revenue=Sum(F('quantity') * F('price')), units=Sum('quantity'))
+        return float(agg['revenue'] or 0), agg['units'] or 0, qs.count()
 
-    revenue_daily = round(total_revenue_all / days_with_data, 2)
-    units_daily   = int(total_units_all / days_with_data)
-    orders_daily  = int(total_orders_all / days_with_data)
+    # ── DAILY: sales on the latest day with data ──
+    revenue_daily, units_daily, orders_daily = _window(ref_date)
 
-    # ── WEEKLY: Sum of sales in calendar week (Mon–Sun) of ref_date ──
-    week_start = ref_date - timedelta(days=ref_date.weekday())  # Monday
-    week_end   = week_start + timedelta(days=6)                  # Sunday
+    # ── WEEKLY: last 7 days, ending ref_date ──
+    week_start = ref_date - timedelta(days=6)
+    revenue_7d, units_7d, orders_7d = _window(week_start)
 
-    revenue_7d = float(
-        SalesRecord.objects.filter(
-            sale_date__gte=week_start,
-            sale_date__lte=week_end
-        ).aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
-    )
-    units_7d  = SalesRecord.objects.filter(
-        sale_date__gte=week_start,
-        sale_date__lte=week_end
-    ).aggregate(total=Sum('quantity'))['total'] or 0
-    orders_7d = SalesRecord.objects.filter(
-        sale_date__gte=week_start,
-        sale_date__lte=week_end
-    ).count()
-
-    # ── MONTHLY: Sum of sales in calendar month of ref_date ──
-    ref_month_start = ref_date.replace(day=1)
-    if ref_date.month == 12:
-        ref_month_end = ref_date.replace(year=ref_date.year + 1, month=1, day=1) - timedelta(days=1)
-    else:
-        ref_month_end = ref_date.replace(month=ref_date.month + 1, day=1) - timedelta(days=1)
-
-    revenue_monthly = float(
-        SalesRecord.objects.filter(
-            sale_date__gte=ref_month_start,
-            sale_date__lte=ref_month_end
-        ).aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
-    )
-    units_monthly  = SalesRecord.objects.filter(
-        sale_date__gte=ref_month_start,
-        sale_date__lte=ref_month_end
-    ).aggregate(total=Sum('quantity'))['total'] or 0
-    orders_monthly = SalesRecord.objects.filter(
-        sale_date__gte=ref_month_start,
-        sale_date__lte=ref_month_end
-    ).count()
+    # ── MONTHLY: last 30 days, ending ref_date ──
+    month_start = ref_date - timedelta(days=29)
+    revenue_monthly, units_monthly, orders_monthly = _window(month_start)
 
     revenue_all = float(
         SalesRecord.objects.aggregate(
@@ -118,14 +82,24 @@ def _get_dashboard_context():
     low_stock_qs    = Inventory.objects.filter(stock_qty__lte=F('restock_threshold')).order_by('stock_qty')
     low_stock_count = low_stock_qs.count()
 
-    top_products = (
+    top_products = list(
         SalesRecord.objects
         .values('product_name')
         .annotate(total_qty=Sum('quantity'))
-        .order_by('-total_qty')[:3]
+        .order_by('-total_qty')[:5]
     )
     top_product_labels = [p['product_name'] for p in top_products]
     top_product_values = [p['total_qty']    for p in top_products]
+
+    max_top_qty = max((p['total_qty'] for p in top_products), default=1) or 1
+    top_products_ranked = [
+        {
+            'name':       p['product_name'],
+            'qty':        p['total_qty'],
+            'percentage': int((p['total_qty'] / max_top_qty) * 100),
+        }
+        for p in top_products
+    ]
 
     return {
         'daily_sold':          units_daily,
@@ -145,7 +119,11 @@ def _get_dashboard_context():
         'low_stock_items':     low_stock_qs[:5],
         'top_product_labels':  json.dumps(top_product_labels),
         'top_product_values':  json.dumps(top_product_values),
+        'top_products_ranked': top_products_ranked,
         'ref_date':            ref_date,
+        'week_start':          week_start,
+        'month_start':         month_start,
+        'data_is_current':     ref_date >= today,
         'earliest_date':       earliest_date,
         'has_data':            has_data,
         'revenue_all':         revenue_all,
@@ -156,12 +134,93 @@ def _get_dashboard_context():
 # OWNER DASHBOARD
 # ─────────────────────────────────────────────────────────────
 
+def _get_owner_dashboard_extras():
+    """
+    Dashboard-only aggregations — deliberately kept separate from
+    _get_dashboard_context() (which inventory_view also calls) so the
+    Inventory page never pays for these extra queries.
+    """
+    from inventory.models import InventoryAuditLog
+    from inventory.services import get_predicted_demand_report, get_predicted_vs_actual_trend
+    from .models import OwnerEvent
+
+    week_ago = tz.now() - timedelta(days=7)
+    waste_cost_week = InventoryAuditLog.objects.filter(
+        action='waste', created_at__gte=week_ago
+    ).aggregate(total=Sum('total_cost'))['total'] or 0
+
+    demand_report = get_predicted_demand_report(days_ahead=1)
+    if demand_report['has_enough_data']:
+        predicted_demand_tomorrow = sum(p['predicted_demand'] for p in demand_report['products'])
+        restock_needed_count = sum(1 for p in demand_report['products'] if p['recommended_order'] > 0)
+    else:
+        predicted_demand_tomorrow = None
+        restock_needed_count = None
+
+    today = tz.localdate()
+    upcoming_event = next(
+        (
+            e for e in OwnerEvent.objects.filter(is_archived=False).order_by('event_date')
+            if e.effective_end_date >= today
+        ),
+        None,
+    )
+
+    recent_activity = list(
+        InventoryAuditLog.objects.select_related('performed_by').order_by('-created_at')[:6]
+    )
+
+    trend = get_predicted_vs_actual_trend(days=30)
+    trend_labels    = [p['date'].strftime('%b %d') for p in trend['points']]
+    trend_predicted = [p['predicted'] for p in trend['points']]
+    trend_actual    = [p['actual']    for p in trend['points']]
+
+    return {
+        'waste_cost_week':           waste_cost_week,
+        'predicted_demand_tomorrow': predicted_demand_tomorrow,
+        'restock_needed_count':      restock_needed_count,
+        'forecast_has_enough_data':  demand_report['has_enough_data'],
+        'upcoming_event':            upcoming_event,
+        'recent_activity':           recent_activity,
+        'trend_has_enough_data':     trend['has_enough_data'],
+        # Only days with BOTH a prediction and real sales are plotted, so show
+        # the actual span rather than implying a full 30 days.
+        'trend_range': (
+            f"{trend['points'][0]['date']:%b %d} – {trend['points'][-1]['date']:%b %d}"
+            if trend['points'] else ''
+        ),
+        'trend_labels_json':         json.dumps(trend_labels),
+        'trend_predicted_json':      json.dumps(trend_predicted),
+        'trend_actual_json':         json.dumps(trend_actual),
+    }
+
+
 @login_required
 def owner_dashboard_view(request):
     if getattr(request.user, 'role', 'STAFF') != 'OWNER':
         return redirect('staff-dashboard')
     context = _get_dashboard_context()
+    context.update(_get_owner_dashboard_extras())
+    # "Today's checklist": how stale the sales data is drives step 1.
+    context['days_since_upload'] = (
+        (tz.localdate() - context['ref_date']).days if context['has_data'] else None
+    )
     return render(request, 'OWNER/owner.html', context)
+
+
+@owner_required_json
+def owner_dashboard_stats_api(request):
+    """20-second dashboard poll — same helpers the page itself renders
+    from, so the numbers can never drift apart."""
+    from django.http import JsonResponse
+    ctx = _get_dashboard_context()
+    extras = _get_owner_dashboard_extras()
+    return JsonResponse({
+        'daily_sales':               ctx['daily_sales'],
+        'low_stock_count':           ctx['low_stock_count'],
+        'predicted_demand_tomorrow': extras['predicted_demand_tomorrow'],
+        'waste_cost_week':           extras['waste_cost_week'],
+    })
 
 
 # ─────────────────────────────────────────────────────────────
@@ -170,111 +229,141 @@ def owner_dashboard_view(request):
 
 @login_required
 def inventory_view(request):
-    if getattr(request.user, 'role', 'STAFF') != 'OWNER':
-        return redirect('staff-dashboard')
-
-    if request.method == 'POST':
-        item_name   = request.POST.get('item_name', '').strip()
-        total_stock = request.POST.get('total_stock')
-        stock_qty   = request.POST.get('stock_qty')
-        unit        = request.POST.get('unit', '').strip()
-        category    = request.POST.get('category', 'Stock')
-
-        if item_name and total_stock and stock_qty:
-            Inventory.objects.create(
-                item_name=item_name,
-                total_stock=total_stock,
-                stock_qty=stock_qty,
-                unit=unit,
-                category=category,
-            )
-            messages.success(request, f'"{item_name}" added to inventory.')
-        else:
-            messages.error(request, 'Please fill in all required fields.')
-        return redirect('view-inventory')
-
-    current_tab = request.GET.get('tab', 'Stock')
-    inventory   = Inventory.objects.filter(category=current_tab).order_by('item_name')
-    dash        = _get_dashboard_context()
-
-    context = {
-        'inventory':     inventory,
-        'current_tab':   current_tab,
-        'daily_sales':   dash['daily_sales'],
-        'weekly_sales':  dash['weekly_sales'],
-        'monthly_sales': dash['monthly_sales'],
-    }
-    return render(request, 'OWNER/inventory.html', context)
+    """Old duplicate of the Inventory page. Its add-item path skipped cost,
+    validation and the audit log, so it now just forwards to the real page
+    (inventory.views.inventory_view) — one place where stock can change."""
+    tab = request.GET.get('tab', 'Stock')
+    return redirect(f"/inventory/?tab={tab}")
 
 
 # ─────────────────────────────────────────────────────────────
 # UPLOAD DATA — with deduplication + batched temp fetch
 # ─────────────────────────────────────────────────────────────
 
+CSV_DATE_FORMATS = ('%Y-%m-%d', '%Y/%m/%d', '%m/%d/%Y')   # ISO, plus Excel's usual export
+
+
+def _parse_sale_date(raw):
+    for fmt in CSV_DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f"unrecognised date '{raw}' (use YYYY-MM-DD)")
+
+
 def _process_csv_rows(rows_list):
     """
     Shared CSV processing logic used by both upload_view and approve_sales_upload.
-    Returns (created_count, skipped_count, error_list, created_records) — the
-    last one is the list of newly-inserted SalesRecord objects, used to drive
-    automatic ingredient deduction for this batch only (not re-deducting for
-    rows that were already in the database).
+    Returns (created_count, skipped_count, error_list, created_records, notes).
+
+    One SalesRecord = one product on one day. Rules, so revenue and cups are
+    exactly what the file says:
+      • Several rows for the same product + day IN THE SAME FILE (e.g. one per
+        transaction) are ADDED together — not dropped as duplicates. The stored
+        price is the revenue-weighted average, so quantity × price still equals
+        the file's total for that day.
+      • A product + day that is ALREADY in the database is skipped, so
+        re-uploading the same file never double-counts.
+      • Product names are matched ignoring case/extra spaces, reusing the
+        spelling already on record.
+      • Quantity must be a whole number > 0, price ≥ 0, date not in the future.
+    created_records drive ingredient deduction for this batch only.
     """
-    # ── 1. Pre-parse all rows ──────────────────────────────────
-    parsed = []
-    parse_errors = []
+    from inventory.services import normalize_product_name
 
-    for row in rows_list:
+    errors = []
+    notes  = []
+    today  = tz.localdate()
+
+    # Canonical spelling for names we already know (sales history + recipes)
+    from inventory.models import ProductRecipe
+    known_names = {}
+    for name in list(SalesRecord.objects.values_list('product_name', flat=True).distinct()) + \
+                list(ProductRecipe.objects.values_list('product_name', flat=True)):
+        known_names.setdefault(normalize_product_name(name), name)
+
+    # ── 1. Parse + validate every row, summing same product/day ──
+    totals = {}   # (normalized name, date) → {'name', 'qty', 'revenue'}
+    for line_no, row in enumerate(rows_list, start=2):   # row 1 is the header
+        date_val  = (row.get('Date') or '').strip()
+        prod_name = ' '.join((row.get('Product Name') or '').split())
+        qty_raw   = (row.get('Quantity') or '').strip()
+        price_raw = (row.get('Unit Price') or '').replace('₱', '').replace(',', '').strip()
+
+        if not any([date_val, prod_name, qty_raw, price_raw]):
+            continue   # fully blank line
         try:
-            date_val  = row.get('Date', '').strip()
-            prod_name = row.get('Product Name', '').strip()
-            qty_raw   = row.get('Quantity', '').strip()
-            price_raw = row.get('Unit Price', '').strip()
-
             if not date_val or not prod_name:
-                continue
-
-            qty   = int(qty_raw)
+                raise ValueError("missing date or product name")
+            sale_date = _parse_sale_date(date_val)
+            if sale_date > today:
+                raise ValueError(f"date {sale_date} is in the future")
+            qty_f = float(qty_raw)
+            if qty_f != int(qty_f) or qty_f <= 0:
+                raise ValueError(f"quantity must be a whole number above 0 (got '{qty_raw}')")
             price = float(price_raw)
-            sale_date = datetime.strptime(date_val, '%Y-%m-%d').date()
-            parsed.append((date_val, prod_name, qty, price, sale_date))
-
-        except Exception as e:
-            parse_errors.append(f"Parse error: {e} | row={row}")
+            if price < 0:
+                raise ValueError(f"unit price can't be negative (got '{price_raw}')")
+        except ValueError as e:
+            errors.append(f"Row {line_no}: {e}")
             continue
 
-    # ── 2. Batch-fetch temperatures (1 API call per unique date) ──
-    unique_dates = {p[0] for p in parsed}
-    temp_cache = {}
-    for d in unique_dates:
-        temp_cache[d] = get_historical_temp(d) or 30.0
+        key = (normalize_product_name(prod_name), sale_date)
+        acc = totals.setdefault(key, {
+            'name': known_names.get(key[0], prod_name), 'qty': 0, 'revenue': 0.0,
+        })
+        acc['qty']     += int(qty_f)
+        acc['revenue'] += int(qty_f) * price
 
-    # ── 3. Insert with deduplication ──────────────────────────
-    created = 0
-    skipped = 0
-    created_records = []
+    # ── 2. Temperatures (1 API call per unique date) ──
+    temp_cache, estimated = {}, []
+    for d in {k[1] for k in totals}:
+        t = get_historical_temp(d.isoformat())
+        if t is None:
+            # Weather archive unreachable: use the average of REAL recorded
+            # temperatures for that month rather than inventing a number.
+            t = SalesRecord.objects.filter(sale_date__month=d.month).aggregate(a=Avg('temp_c'))['a'] \
+                or SalesRecord.objects.aggregate(a=Avg('temp_c'))['a'] or 30.0
+            estimated.append(d)
+        temp_cache[d] = round(float(t), 1)
+    if estimated:
+        notes.append(f"Weather history was unavailable for {len(estimated)} date(s); "
+                     f"used the average recorded temperature for that month.")
 
-    for date_val, prod_name, qty, price, sale_date in parsed:
+    # ── 3. Insert, skipping product/days already on record ──
+    created, skipped, created_records = 0, 0, []
+    for (norm, sale_date), acc in sorted(totals.items(), key=lambda kv: kv[0][1]):
+        if SalesRecord.objects.filter(product_name__iexact=acc['name'], sale_date=sale_date).exists():
+            skipped += 1
+            continue
         try:
-            record, was_created = SalesRecord.objects.get_or_create(
-                # Unique key: product + date only
-                product_name=prod_name,
+            record = SalesRecord.objects.create(
+                product_name=acc['name'],
                 sale_date=sale_date,
-                defaults={
-                    'quantity': qty,
-                    'price':    price,
-                    'temp_c':   temp_cache.get(date_val, 30.0),
-                }
+                quantity=acc['qty'],
+                price=round(acc['revenue'] / acc['qty'], 2),
+                temp_c=temp_cache[sale_date],
             )
-            if was_created:
-                created += 1
-                created_records.append(record)
-            else:
-                skipped += 1
         except Exception as e:
-            parse_errors.append(f"DB error: {e} | product={prod_name} date={date_val}")
+            errors.append(f"{acc['name']} on {sale_date}: could not save ({e})")
             continue
+        created += 1
+        created_records.append(record)
 
-    return created, skipped, parse_errors, created_records
+    return created, skipped, errors, created_records, notes
+
+
+def _report_csv_problems(request, errors, notes):
+    """Tell the owner exactly which rows were rejected (first few) instead of
+    only a count — so they can fix the file and re-upload."""
+    for note in notes:
+        messages.info(request, note)
+    if errors:
+        shown = '; '.join(errors[:5])
+        more  = f' (+{len(errors) - 5} more)' if len(errors) > 5 else ''
+        messages.error(request, f'{len(errors)} row(s) were not imported: {shown}{more}. '
+                                f'Ayusin ang mga row na ito at i-upload muli.')
 
 
 def _apply_recipe_deduction(request, created_records):
@@ -287,7 +376,7 @@ def _apply_recipe_deduction(request, created_records):
     if not created_records:
         return
 
-    summary = deduct_inventory_for_sales(created_records)
+    summary = deduct_inventory_for_sales(created_records, user=request.user)
 
     if summary['deducted']:
         messages.success(
@@ -296,11 +385,25 @@ def _apply_recipe_deduction(request, created_records):
             f"product{'s' if len(summary['deducted']) != 1 else ''} based on their recipes. "
             f"Nabawasan ang stock base sa recipe."
         )
+    if summary['skipped_old']:
+        messages.info(
+            request,
+            f"{summary['skipped_old']} sale(s) are dated before your last stock count, so they "
+            f"did not reduce current stock (they're still used for the forecast). "
+            f"Hindi na ibinawas dahil luma na ang petsa."
+        )
     if summary['no_recipe']:
         messages.warning(
             request,
             f"No recipe defined for: {', '.join(summary['no_recipe'])}. "
             f"Inventory was not deducted for these. Walang recipe kaya hindi nabawasan ang stock."
+        )
+    if summary['shortfall']:
+        short = ', '.join(f"{s['item']} (short {s['short_by']:g} {s['unit']})" for s in summary['shortfall'])
+        messages.warning(
+            request,
+            f"Sales used more than the recorded stock for: {short}. Stock was set to 0 — "
+            f"please do a stock count and correct it in Inventory → Edit."
         )
 
 
@@ -350,14 +453,24 @@ def upload_view(request):
             messages.error(request, f'Missing required columns: {", ".join(missing)}. Check your file format. May kulang na column.')
             return redirect('view-upload-data')
 
-        created, skipped, errors, created_records = _process_csv_rows(rows_list)
+        created, skipped, errors, created_records, notes = _process_csv_rows(rows_list)
 
         msg = f'Upload complete. {created} new record(s) added. Kumpleto ang pag-upload.'
+        if created_records:
+            # Say WHICH dates were added — older dates don't move the "latest
+            # day / last 7 / last 30 days" cards, which otherwise looks like
+            # nothing happened.
+            dates = sorted(r.sale_date for r in created_records)
+            msg += f' Dates: {dates[0]:%b %d, %Y}' + (f' – {dates[-1]:%b %d, %Y}.' if dates[-1] != dates[0] else '.')
+            latest = SalesRecord.objects.aggregate(m=Max('sale_date'))['m']
+            if latest and dates[-1] < latest:
+                msg += (f' These are older than your latest sales ({latest:%b %d}), so the dashboard cards '
+                        f"won't change, but the forecast now learns from them. "
+                        f'Makikita sa Historical Data Log.')
         if skipped:
-            msg += f' {skipped} duplicate(s) skipped.'
-        if errors:
-            msg += f' {len(errors)} row(s) had errors and were skipped.'
+            msg += f' {skipped} product-day(s) were already uploaded and were skipped.'
         messages.success(request, msg)
+        _report_csv_problems(request, errors, notes)
 
         _apply_recipe_deduction(request, created_records)
 
@@ -401,6 +514,11 @@ def upload_view(request):
         'weekly_revenue':     dash['weekly_revenue'],
         'monthly_revenue':    dash['monthly_revenue'],
         'top_product':        top_product,
+        'ref_date':           dash['ref_date'],
+        'week_start':         dash['week_start'],
+        'month_start':        dash['month_start'],
+        'data_is_current':    dash['data_is_current'],
+        'has_data':           dash['has_data'],
     })
 
 # ─────────────────────────────────────────────────────────────
@@ -442,19 +560,62 @@ def approve_inventory_request(request, pk):
     action = request.POST.get('action')
 
     if action == 'approve':
-        Inventory.objects.create(
-            item_name=req.item_name,
-            total_stock=req.total_stock,
-            stock_qty=req.stock_qty,
-            unit=req.unit,
-            category=req.category,
+        from inventory.models import InventoryAuditLog
+        from inventory.views import default_restock_threshold
+
+        qty      = float(req.stock_qty or 0)
+        existing = Inventory.objects.filter(item_name__iexact=req.item_name.strip(), category=req.category).first()
+
+        if existing and existing.unit != req.unit:
+            messages.error(request, f'"{req.item_name}" already exists in {existing.unit}, but the request is in '
+                                    f'{req.unit}. Adjust the stock manually in Inventory instead.')
+            return redirect('view-approvals')
+
+        if existing:
+            # A request for an item we already stock is a restock, not a new row.
+            existing.stock_qty   = float(existing.stock_qty) + qty
+            existing.total_stock = float(existing.total_stock) + qty
+            existing.save()
+            item, action_code, note = existing, 'restock', f"Approved staff request from {req.requested_by}"
+            msg = f'"{req.item_name}" approved — added {qty:g} {req.unit} to existing stock.'
+        else:
+            item = Inventory.objects.create(
+                item_name=req.item_name.strip(),
+                total_stock=qty,
+                stock_qty=qty,
+                unit=req.unit,
+                category=req.category,
+                restock_threshold=default_restock_threshold(),
+                stock_as_of=tz.localdate(),
+            )
+            action_code, note = 'initial', f"New item from staff request by {req.requested_by}"
+            msg = (f'"{req.item_name}" approved and added to inventory. '
+                   f'Set its unit cost and package size in Inventory → Edit.')
+
+        InventoryAuditLog.objects.create(
+            inventory=item, item_name=item.item_name, action=action_code,
+            qty_change=qty, unit=item.unit, performed_by=request.user, notes=note,
         )
         req.status = 'approved'
         req.save()
-        messages.success(request, f'"{req.item_name}" approved and added to inventory.')
+        messages.success(request, msg)
     elif action == 'reject':
+        reason = request.POST.get('reject_reason', '').strip()
+        if not reason:
+            messages.error(request, 'Please state a reason for rejecting this request.')
+            return redirect('view-approvals')
+
         req.status = 'rejected'
+        req.rejection_reason = reason
         req.save()
+
+        from accounts.views import _raise_alert
+        _raise_alert(
+            req.requested_by, 'rejected', f'inv_rejected:{req.pk}',
+            f'Inventory Request Rejected: {req.item_name}',
+            f'Your request for "{req.item_name}" ({req.stock_qty} {req.unit}) was rejected. Reason: {reason}',
+            link='/staff/'
+        )
         messages.warning(request, f'"{req.item_name}" request rejected.')
 
     return redirect('view-approvals')
@@ -474,13 +635,31 @@ def approve_event_request(request, pk):
             event_name=req.event_name,
             event_date=req.event_date,
             description=req.description,
+            location=req.location,
+            start_time=req.start_time,
+            end_date=req.end_date,
+            end_time=req.end_time,
         )
         req.status = 'approved'
         req.save()
         messages.success(request, f'Event "{req.event_name}" approved and published.')
     elif action == 'reject':
+        reason = request.POST.get('reject_reason', '').strip()
+        if not reason:
+            messages.error(request, 'Please state a reason for rejecting this request.')
+            return redirect('view-approvals')
+
         req.status = 'rejected'
+        req.rejection_reason = reason
         req.save()
+
+        from accounts.views import _raise_alert
+        _raise_alert(
+            req.requested_by, 'rejected', f'event_rejected:{req.pk}',
+            f'Event Request Rejected: {req.event_name}',
+            f'Your event request "{req.event_name}" was rejected. Reason: {reason}',
+            link='/staff/'
+        )
         messages.warning(request, f'Event "{req.event_name}" request rejected.')
 
     return redirect('view-approvals')
@@ -514,7 +693,7 @@ def approve_sales_upload(request, pk):
                 )
                 return redirect('view-approvals')
 
-            created, skipped, errors, created_records = _process_csv_rows(rows_list)
+            created, skipped, errors, created_records, notes = _process_csv_rows(rows_list)
 
             req.status        = 'approved'
             req.records_added = created
@@ -523,8 +702,9 @@ def approve_sales_upload(request, pk):
 
             msg = f'CSV approved. {created} new record(s) imported. Na-approve na.'
             if skipped:
-                msg += f' {skipped} duplicate(s) skipped.'
+                msg += f' {skipped} product-day(s) were already uploaded and were skipped.'
             messages.success(request, msg)
+            _report_csv_problems(request, errors, notes)
 
             _apply_recipe_deduction(request, created_records)
 
@@ -754,13 +934,36 @@ def settings_view(request):
 
     if request.method == 'POST':
         if 'update_config' in request.POST:
-            config.store_name      = request.POST.get('store_name')
-            config.contact_number  = request.POST.get('contact_number')
-            config.stock_threshold = request.POST.get('stock_threshold')
-            config.weather_api_key = request.POST.get('weather_api_key', '').strip() or None
-            config.forecast_mode   = request.POST.get('forecast_mode')
-            config.store_lat       = request.POST.get('store_lat')
-            config.store_lon       = request.POST.get('store_lon')
+            def _num(name, cast, current):
+                raw = (request.POST.get(name) or '').strip()
+                if raw == '':
+                    return current          # left blank → keep what's saved
+                try:
+                    return cast(raw)
+                except ValueError:
+                    raise ValueError(name)
+
+            try:
+                threshold = _num('stock_threshold', lambda v: int(float(v)), config.stock_threshold)
+                lat       = _num('store_lat', float, config.store_lat)
+                lon       = _num('store_lon', float, config.store_lon)
+            except ValueError as bad:
+                messages.error(request, f'Please enter a valid number for {str(bad).replace("_", " ")}.')
+                return redirect('view-settings')
+            if threshold is not None and threshold < 0:
+                messages.error(request, 'Default low-stock limit must be 0 or more.')
+                return redirect('view-settings')
+
+            config.store_name      = (request.POST.get('store_name') or '').strip() or config.store_name
+            config.contact_number  = request.POST.get('contact_number', config.contact_number) or ''
+            config.stock_threshold = threshold
+            config.store_lat       = lat
+            config.store_lon       = lon
+            # The key box is never pre-filled (it's a secret), so blank means
+            # "keep the saved key" — not "delete it".
+            new_key = request.POST.get('weather_api_key', '').strip()
+            if new_key:
+                config.weather_api_key = new_key
             config.save()
             messages.success(request, 'Configuration updated.')
 
@@ -846,6 +1049,14 @@ def employee_edit(request, pk):
         date_hired_str = request.POST.get('date_hired', '')
         if date_hired_str:
             profile.date_hired = datetime.strptime(date_hired_str, '%Y-%m-%d').date()
+
+        wage_amount_str = request.POST.get('wage_amount', '').strip()
+        profile.wage_amount   = wage_amount_str or None
+        profile.wage_schedule = request.POST.get('wage_schedule', 'biweekly')
+
+        last_payment_str = request.POST.get('last_payment_date', '')
+        if last_payment_str:
+            profile.last_payment_date = datetime.strptime(last_payment_str, '%Y-%m-%d').date()
 
         if 'photo' in request.FILES:
             profile.photo = request.FILES['photo']

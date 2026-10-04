@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}CraveCast - Employees{% endblock %}
+{% block title %}CraveCast - Staff &amp; Pay{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 data-en="Employee Profiles" data-tl="Mga Profile ng Empleyado">Employee Profiles</h1>
+        <h1 data-en="Staff &amp; Pay" data-tl="Staff at Sahod">Staff &amp; Pay</h1>
         <p data-en="Manage your staff and contract details" data-tl="Pamahalaan ang staff at detalye ng kontrata">Manage your staff and contract details</p>
     </div>
 </div>
@@ -31,7 +31,7 @@
         {% if emp.profile.photo %}
             <img src="{{ emp.profile.photo.url }}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);">
         {% else %}
-            <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--blue)); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; color: #fff; font-size: 18px;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), var(--blue)); display: flex; align-items: center; justify-content: center; font-family: var(--font-main); font-weight: 700; color: #fff; font-size: 18px;">
                 {{ emp.username|slice:":1"|upper }}
             </div>
         {% endif %}
@@ -62,9 +62,17 @@
             <span style="color: var(--text-muted);" data-en="Contract End" data-tl="Katapusan ng Kontrata">Contract End</span>
             <span>{{ emp.profile.contract_end|date:"M d, Y"|default:"Regular" }}</span>
         </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);" data-en="Wage Schedule" data-tl="Iskedyul ng Sahod">Wage Schedule</span>
+            <span>{{ emp.profile.get_wage_schedule_display }}{% if emp.profile.wage_amount %} — <span class="peso">₱</span>{{ emp.profile.wage_amount|floatformat:2 }}{% endif %}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);" data-en="Next Payment" data-tl="Susunod na Bayad">Next Payment</span>
+            <span>{{ emp.profile.next_payment_date|date:"M d, Y"|default:"—" }}</span>
+        </div>
     </div>
 
-    <div>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">
         {% if emp.profile.contract_status == 'expiring_soon' %}
             <span class="badge badge-amber">⚠ <span data-en="Expiring in {{ emp.profile.days_until_expiry }} days" data-tl="Mag-e-expire sa {{ emp.profile.days_until_expiry }} araw">Expiring in {{ emp.profile.days_until_expiry }} days</span></span>
         {% elif emp.profile.contract_status == 'expired' %}
@@ -73,6 +81,11 @@
             <span class="badge badge-green">✓ <span data-en="Regular Employee" data-tl="Regular na Empleyado">Regular Employee</span></span>
         {% else %}
             <span class="badge badge-teal">✓ <span data-en="Active — {{ emp.profile.days_until_expiry }} days left" data-tl="Aktibo — {{ emp.profile.days_until_expiry }} araw na lang">Active — {{ emp.profile.days_until_expiry }} days left</span></span>
+        {% endif %}
+        {% if emp.profile.payment_status == 'due' %}
+            <span class="badge badge-orange">🟠 <span data-en="Payment Due" data-tl="Dapat Nang Bayaran">Payment Due</span></span>
+        {% elif emp.profile.payment_status == 'upcoming' %}
+            <span class="badge badge-blue">🔵 <span data-en="Payment Upcoming" data-tl="Paparating na Bayad">Payment Upcoming</span></span>
         {% endif %}
     </div>
 

@@ -40,7 +40,7 @@
         background: none;
     }
     .tab-btn:hover { color: var(--text); background: var(--surface2); }
-    .tab-btn.active-tab { background: var(--red); color: #fff; }
+    .tab-btn.active-tab { background: var(--text); color: var(--bg); }
 
     /* ── Stats ── */
     .stats-grid {
@@ -50,10 +50,11 @@
         margin-bottom: 28px;
     }
 
-    /* ── Restock Alert Banner ── */
+    /* ── Restock Alert Banner (needs attention → amber) ── */
     .restock-banner {
-        background: rgba(255, 152, 0, 0.08);
-        border: 1px solid rgba(255, 152, 0, 0.35);
+        background: var(--amber-dim);
+        border: 1px solid rgba(245,158,11,0.35);
+        border-left: 3px solid var(--amber);
         border-radius: 12px;
         padding: 14px 18px;
         margin-bottom: 20px;
@@ -62,14 +63,15 @@
         gap: 12px;
     }
     .restock-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-    .restock-banner-title { font-size: 13px; font-weight: 700; color: #f59e0b; margin-bottom: 4px; }
+    .restock-banner-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
     .restock-banner-items { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
     .restock-banner-items strong { color: var(--text); }
 
-    /* ── Expiry Alert Banner ── */
+    /* ── Expiry Alert Banner (expiring soon, not yet expired → amber) ── */
     .expiry-banner {
-        background: rgba(239, 68, 68, 0.08);
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: var(--amber-dim);
+        border: 1px solid rgba(245,158,11,0.3);
+        border-left: 3px solid var(--amber);
         border-radius: 12px;
         padding: 14px 18px;
         margin-bottom: 20px;
@@ -78,7 +80,7 @@
         gap: 12px;
     }
     .expiry-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-    .expiry-banner-title { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .expiry-banner-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
     .expiry-banner-items { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
 
     /* ── Table ── */
@@ -162,7 +164,7 @@
         justify-content: space-between;
     }
     .audit-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
     }
@@ -175,10 +177,10 @@
         font-size: 11px;
         font-weight: 700;
     }
-    .audit-restock  { background: rgba(16,185,129,0.12); color: var(--green); }
-    .audit-waste    { background: rgba(255,61,90,0.12);  color: var(--red);   }
-    .audit-initial  { background: rgba(99,102,241,0.12); color: #818cf8;      }
-    .audit-deduct   { background: rgba(245,158,11,0.12); color: #f59e0b;      }
+    .audit-restock  { background: var(--green-dim); color: var(--green); }
+    .audit-waste    { background: var(--red-dim);   color: var(--red);   }
+    .audit-initial  { background: var(--blue-dim);  color: var(--blue);  }
+    .audit-deduct   { background: var(--gray-dim);  color: var(--gray);  }
 
     /* ── Request history card ── */
     .request-card {
@@ -196,7 +198,7 @@
         justify-content: space-between;
     }
     .request-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
     }
@@ -229,11 +231,11 @@
     }
     .export-panel-icon {
         width: 44px; height: 44px;
-        background: rgba(139,92,246,0.1);
-        border: 1px solid rgba(139,92,246,0.2);
+        background: var(--blue-dim);
+        border: 1px solid rgba(59,130,246,0.2);
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 22px; color: var(--purple);
+        font-size: 22px; color: var(--blue);
         flex-shrink: 0;
     }
     .export-panel-text { flex: 1; min-width: 140px; }
@@ -251,12 +253,12 @@
         font-family: inherit;
         cursor: pointer;
     }
-    .export-select:focus { outline: none; border-color: var(--purple); }
+    .export-select:focus { outline: none; border-color: var(--blue); }
     .export-btn {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        background: var(--purple);
+        background: var(--blue);
         color: #fff;
         padding: 9px 20px;
         border-radius: 9px;
@@ -358,9 +360,9 @@
         font-size: 11px;
         font-weight: 700;
     }
-    .expiry-badge.expired { background: rgba(255,61,90,0.15); color: var(--red); }
-    .expiry-badge.soon    { background: rgba(245,158,11,0.15); color: #f59e0b; }
-    .expiry-badge.ok      { background: rgba(16,185,129,0.1);  color: var(--green); }
+    .expiry-badge.expired { background: var(--red-dim);   color: var(--red); }
+    .expiry-badge.soon    { background: var(--amber-dim); color: var(--amber); }
+    .expiry-badge.ok      { background: var(--green-dim); color: var(--green); }
 </style>
 {% endblock %}
 
@@ -388,7 +390,7 @@
 <div class="restock-banner">
     <div class="restock-banner-icon">⚠️</div>
     <div>
-        <div class="restock-banner-title"><span data-en="Restock Alert" data-tl="Alerto sa Restock">Restock Alert</span> — {{ low_stock_items|length }} <span data-en="item{{ low_stock_items|length|pluralize }} need attention" data-tl="item ang kailangang pansinin">item{{ low_stock_items|length|pluralize }} need attention</span></div>
+        <div class="restock-banner-title"><span data-en="Restock Alert" data-tl="Alerto sa Restock">Restock Alert</span> — {{ low_stock_items|length }} <span data-en="item{{ low_stock_items|length|pluralize }} {{ low_stock_items|length|pluralize:"needs,need" }} attention" data-tl="item ang kailangang pansinin">item{{ low_stock_items|length|pluralize }} {{ low_stock_items|length|pluralize:"needs,need" }} attention</span></div>
         <div class="restock-banner-items">
             {% for item in low_stock_items %}
                 <strong>{{ item.item_name }}</strong> ({{ item.stock_qty|floatformat:"-2" }} {{ item.unit }} <span data-en="left" data-tl="natitira">left</span>){% if not forloop.last %} &nbsp;·&nbsp; {% endif %}
@@ -413,29 +415,8 @@
 </div>
 {% endif %}
 
-<!-- ── STAT CARDS ── -->
-<div class="stats-grid">
-    <div class="stat-card blue">
-        <div class="stat-label" data-en="Daily Sales" data-tl="Araw-araw na Benta">Daily Sales</div>
-        <div class="stat-value">₱{{ daily_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub" data-en="Today's revenue" data-tl="Kita ngayong araw">Today's revenue</div>
-    </div>
-    <div class="stat-card teal">
-        <div class="stat-label" data-en="Weekly Sales" data-tl="Lingguhang Benta">Weekly Sales</div>
-        <div class="stat-value">₱{{ weekly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub" data-en="This week total" data-tl="Kabuuan ngayong linggo">This week total</div>
-    </div>
-    <div class="stat-card purple">
-        <div class="stat-label" data-en="Monthly Sales" data-tl="Buwanang Benta">Monthly Sales</div>
-        <div class="stat-value">₱{{ monthly_sales|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub" data-en="This month total" data-tl="Kabuuan ngayong buwan">This month total</div>
-    </div>
-    <div class="stat-card red">
-        <div class="stat-label" data-en="Items Tracked" data-tl="Naka-track na Item">Items Tracked</div>
-        <div class="stat-value">{{ inventory|length|intcomma }}</div>
-        <div class="stat-sub" data-en="In current category" data-tl="Sa kasalukuyang kategorya">In current category</div>
-    </div>
-</div>
+<!-- Sales summary cards live on the Main Dashboard only — Inventory stays
+     focused on inventory-specific information (see banners/table below). -->
 
 <!-- ── EXPORT PANEL ── -->
 {% if request.user.role == 'OWNER' or request.user.can_export %}
@@ -481,11 +462,11 @@
     <thead>
         <tr>
             <th data-en="Item Name" data-tl="Pangalan ng Item">Item Name</th>
-            <th data-en="Initial Stock" data-tl="Panimulang Stock">Initial Stock</th>
+            <th data-en="Total Received" data-tl="Kabuuang Natanggap">Total Received</th>
             <th data-en="Current Level" data-tl="Kasalukuyang Antas">Current Level</th>
             {% if current_tab == 'Stock' %}<th data-en="Expiry Date" data-tl="Petsa ng Expiry">Expiry Date</th>{% endif %}
             <th data-en="Status" data-tl="Katayuan">Status</th>
-            {% if request.user.role == 'OWNER' %}<th style="text-align:center;" data-en="Actions" data-tl="Aksyon">Actions</th>{% endif %}
+            {% if request.user.role == 'OWNER' or current_tab == 'Stock' %}<th style="text-align:center;" data-en="Actions" data-tl="Aksyon">Actions</th>{% endif %}
         </tr>
     </thead>
     <tbody>
@@ -494,7 +475,7 @@
             <td><span class="item-name">{{ item.item_name }}</span></td>
             <td style="color: var(--text-muted);">{{ item.total_stock|floatformat:"-2" }} {{ item.unit }}</td>
             <td>
-                <span class="qty-pill {% if item.stock_qty <= item.restock_threshold %}badge-red{% else %}badge-green{% endif %}">
+                <span class="qty-pill {% if item.stock_qty <= 0 %}badge-red{% elif item.stock_qty <= item.restock_threshold %}badge-amber{% else %}badge-green{% endif %}">
                     {{ item.stock_qty|floatformat:"-2" }} {{ item.unit }}
                 </span>
             </td>
@@ -517,10 +498,17 @@
 
             <td>
                 <div class="status-stack">
-                    {% if item.stock_qty <= item.restock_threshold %}
-                        <span class="badge badge-red">⚠ Low Stock</span>
+                    {# Expiry outranks quantity: plenty of an expired item is still unusable. #}
+                    {% if item.is_expired and item.stock_qty > 0 %}
+                        <span class="badge badge-red">🚫 Expired — don't use</span>
+                    {% elif item.stock_qty <= 0 %}
+                        <span class="badge badge-red">🔴 Out of Stock</span>
+                    {% elif item.stock_qty <= item.restock_threshold %}
+                        <span class="badge badge-amber">🟡 Low Stock</span>
+                    {% elif item.expiry_soon %}
+                        <span class="badge badge-amber">⏳ Expires Soon</span>
                     {% else %}
-                        <span class="badge badge-green">✓ Stable</span>
+                        <span class="badge badge-green">🟢 Good</span>
                     {% endif %}
 
                     {% if item.latest_waste_type %}
@@ -539,21 +527,23 @@
                 </div>
             </td>
 
-            {% if request.user.role == 'OWNER' %}
+            {% if request.user.role == 'OWNER' or current_tab == 'Stock' %}
             <td>
                 <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                    {% if request.user.role == 'OWNER' %}
                     <!-- Add Stock -->
                     <button class="action-btn success" title="Add Stock"
-                        onclick="openAddStock({{ item.id }}, '{{ item.item_name|escapejs }}', '{{ item.unit }}')">
+                        onclick="openAddStock({{ item.id }}, '{{ item.item_name|escapejs }}', '{{ item.unit }}', {{ item.package_size|default:"null" }})">
                         <i class='bx bx-plus-circle'></i>
                     </button>
                     <!-- Edit -->
                     <button class="action-btn" title="Edit Item"
-                        onclick="openEditModal({{ item.id }}, '{{ item.item_name|escapejs }}', {{ item.total_stock }}, '{{ item.unit }}', {{ item.restock_threshold }}{% if current_tab == 'Stock' %}, '{{ item.expiry_date|date:"Y-m-d" }}'{% endif %})">
+                        onclick="openEditModal({{ item.id }}, '{{ item.item_name|escapejs }}', {{ item.total_stock }}, '{{ item.unit }}', {{ item.restock_threshold }}, {{ item.unit_cost|default:"null" }}, {{ item.package_size|default:"null" }}, '{{ item.package_unit|escapejs }}', {{ item.max_stock|default:"null" }}{% if current_tab == 'Stock' %}, '{{ item.expiry_date|date:"Y-m-d" }}'{% endif %}); document.getElementById('editCurrentStock').value = {{ item.stock_qty }};">
                         <i class='bx bx-edit'></i>
                     </button>
+                    {% endif %}
                     {% if current_tab == 'Stock' %}
-                    <!-- Log Waste -->
+                    <!-- Log Waste (Owner and Staff — Staff never sees cost) -->
                     <button class="action-btn danger" title="Log Waste / Spoilage (leaked, expired, contaminated, damaged...)"
                         onclick="openWasteModal({{ item.id }}, '{{ item.item_name|escapejs }}', '{{ item.unit }}', {{ item.stock_qty }})">
                         <i class='bx bx-trash-alt'></i>
@@ -565,7 +555,7 @@
         </tr>
         {% empty %}
         <tr class="empty-row">
-            <td colspan="{% if current_tab == 'Stock' %}6{% else %}5{% endif %}">
+            <td colspan="{% if current_tab == 'Stock' %}6{% elif request.user.role == 'OWNER' %}5{% else %}4{% endif %}">
                 <div style="font-size: 28px; margin-bottom: 10px;">📭</div>
                 No items found in {{ current_tab }} category.
             </td>
@@ -588,6 +578,9 @@
                 <th data-en="Item" data-tl="Item">Item</th>
                 <th data-en="Type" data-tl="Uri">Type</th>
                 <th data-en="Qty Change" data-tl="Pagbabago sa Dami">Qty Change</th>
+                <th data-en="Supplier" data-tl="Supplier">Supplier</th>
+                <th data-en="Unit Cost" data-tl="Halaga bawat Unit">Unit Cost</th>
+                <th data-en="Total Cost / Loss" data-tl="Kabuuang Halaga / Sayang">Total Cost / Loss</th>
                 <th data-en="Performed By" data-tl="Ginawa Ni">Performed By</th>
                 <th data-en="Notes / Reason" data-tl="Tala / Dahilan">Notes / Reason</th>
             </tr>
@@ -616,6 +609,17 @@
                     {% else %}
                         <span style="color:var(--text-muted);">{{ log.qty_change|floatformat:"-2" }} {{ log.unit }}</span>
                     {% endif %}
+                </td>
+                <td style="font-size:12px; color:var(--text-muted);">{{ log.supplier|default:"—" }}</td>
+                <td style="font-size:12px; color:var(--text-muted);">{% if log.unit_cost %}<span class="peso">₱</span>{{ log.unit_cost|floatformat:2 }}{% else %}—{% endif %}</td>
+                <td style="font-size:12px;">
+                    {% if log.total_cost %}
+                        {% if log.action == 'waste' %}
+                            <span style="color:var(--red); font-weight:700;"><span class="peso">₱</span>{{ log.total_cost|floatformat:2 }}</span>
+                        {% else %}
+                            <span style="color:var(--text-muted); font-weight:600;"><span class="peso">₱</span>{{ log.total_cost|floatformat:2 }}</span>
+                        {% endif %}
+                    {% else %}—{% endif %}
                 </td>
                 <td style="font-size:12px;">{{ log.performed_by }}</td>
                 <td style="font-size:12px; color:var(--text-muted);">{{ log.notes|default:"—" }}</td>
@@ -653,7 +657,7 @@
                 <td><span class="badge badge-blue">{{ req.category }}</span></td>
                 <td style="text-align:center;">
                     {% if req.status == 'pending' %}
-                        <span class="badge badge-amber">⏳ Pending</span>
+                        <span class="badge badge-orange">🟠 Pending</span>
                     {% elif req.status == 'approved' %}
                         <span class="badge badge-green">✓ Approved</span>
                     {% else %}
@@ -693,7 +697,8 @@
             <div style="display:flex; gap:12px;">
                 <div class="form-group" style="flex:1;">
                     <label>Initial Stock</label>
-                    <input type="number" name="total_stock" required placeholder="0" min="0" step="0.01">
+                    <input type="number" name="total_stock" id="entryTotalStock" required placeholder="0" min="0" step="0.01">
+                    <p class="unit-hint" id="entryStockHint" style="margin-top:4px;"></p>
                 </div>
                 <div class="form-group" style="flex:1;">
                     <label>Unit</label>
@@ -724,6 +729,42 @@
                 <input type="number" name="restock_threshold" placeholder="e.g. 20" min="0" step="0.01">
             </div>
 
+            <div class="form-group">
+                <label>Unit Cost <span style="color:var(--text-muted); font-weight:400;">(₱ per unit)</span></label>
+                <input type="number" name="unit_cost" required placeholder="e.g. 150.00" min="0" step="0.01">
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Package Size <span style="color:var(--text-muted); font-weight:400;">(units per package)</span></label>
+                    <input type="number" name="package_size" id="entryPackageSize" required placeholder="e.g. 100" min="0" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Package Type</label>
+                    <select name="package_unit" id="entryPackageUnit" class="unit-select" required>
+                        <option value="">— Select —</option>
+                        <option value="box">Box</option>
+                        <option value="pack">Pack</option>
+                        <option value="sachet">Sachet</option>
+                        <option value="bottle">Bottle</option>
+                        <option value="case">Case</option>
+                        <option value="roll">Roll</option>
+                        <option value="bundle">Bundle</option>
+                        <option value="piece">Piece</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Number of Packages <span style="color:var(--text-muted); font-weight:400;">(optional — auto-fills Initial Stock above)</span></label>
+                <input type="number" id="entryPackagesCount" placeholder="e.g. 10" min="0" step="0.01">
+            </div>
+
+            <div class="form-group">
+                <label>Max Stock <span style="color:var(--text-muted); font-weight:400;">(optional ceiling, prevents overstock recommendations)</span></label>
+                <input type="number" name="max_stock" placeholder="e.g. 200" min="0" step="0.01">
+            </div>
+
             <div class="form-group" id="entryExpiryGroup">
                 <label>Expiry Date <span style="color:var(--text-muted); font-weight:400;">(Ingredients only)</span></label>
                 <input type="date" name="expiry_date">
@@ -742,7 +783,7 @@
                     <i class='bx bx-save'></i> Save Entry
                 </button>
                 <button type="button" class="btn btn-ghost" style="flex:1;" onclick="closeModal('entryModal')">
-               Return
+                    Cancel
                 </button>
             </div>
         </form>
@@ -763,9 +804,15 @@
                 <input type="text" name="item_name" id="editItemName" required>
             </div>
 
+            <div class="form-group">
+                <label>Current Stock <span style="color:var(--text-muted); font-weight:400;">(what you actually have after counting)</span></label>
+                <input type="number" name="current_stock" id="editCurrentStock" min="0" step="0.01">
+                <small style="color:var(--text-muted); font-size:11px;">Changing this records a stock count. Sales dated before today won't be deducted again.</small>
+            </div>
+
             <div style="display:flex; gap:12px;">
                 <div class="form-group" style="flex:1;">
-                    <label>Initial Stock</label>
+                    <label>Total Received <span style="color:var(--text-muted); font-weight:400;">(all-time)</span></label>
                     <input type="number" name="total_stock" id="editTotalStock" required min="0" step="0.01">
                 </div>
                 <div class="form-group" style="flex:1;">
@@ -795,6 +842,37 @@
             <div class="form-group">
                 <label>Restock Alert Threshold</label>
                 <input type="number" name="restock_threshold" id="editRestockThreshold" min="0" step="0.01">
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Unit Cost <span style="color:var(--text-muted); font-weight:400;">(₱ per unit)</span></label>
+                    <input type="number" name="unit_cost" id="editUnitCost" placeholder="e.g. 150.00" min="0" step="0.01">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Package Size <span style="color:var(--text-muted); font-weight:400;">(units/package)</span></label>
+                    <input type="number" name="package_size" id="editPackageSize" placeholder="e.g. 10" min="0" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Package Type <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
+                <select name="package_unit" id="editPackageUnit" class="unit-select">
+                    <option value="">— None —</option>
+                    <option value="box">Box</option>
+                    <option value="pack">Pack</option>
+                    <option value="sachet">Sachet</option>
+                    <option value="bottle">Bottle</option>
+                    <option value="case">Case</option>
+                    <option value="roll">Roll</option>
+                    <option value="bundle">Bundle</option>
+                    <option value="piece">Piece</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Max Stock <span style="color:var(--text-muted); font-weight:400;">(optional ceiling)</span></label>
+                <input type="number" name="max_stock" id="editMaxStock" placeholder="e.g. 200" min="0" step="0.01">
             </div>
 
             <div class="form-group" id="editExpiryGroup">
@@ -828,9 +906,14 @@
                 <span id="addStockItemName">—</span>
             </div>
 
+            <div class="form-group" id="addStockPackagesGroup" style="display:none;">
+                <label>Packages Bought <span style="color:var(--text-muted); font-weight:400;">(bulk purchase — packages × package size)</span></label>
+                <input type="number" name="packages" id="addStockPackages" placeholder="e.g. 5" min="0" step="0.01">
+            </div>
+
             <div style="display:flex; gap:12px;">
                 <div class="form-group" style="flex:1;">
-                    <label>Quantity to Add</label>
+                    <label>Quantity to Add <span id="addStockQtyHint" style="color:var(--text-muted); font-weight:400;"></span></label>
                     <input type="number" name="qty_to_add" id="addStockQty" required placeholder="0" min="0.01" step="0.01">
                 </div>
                 <div class="form-group" style="flex:1;">
@@ -838,6 +921,11 @@
                     <input type="text" name="unit" id="addStockUnit" readonly
                         style="background:var(--surface2); color:var(--text-muted); cursor:not-allowed;">
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Unit Cost <span style="color:var(--text-muted); font-weight:400;">(₱ per unit this purchase — becomes the item's current cost)</span></label>
+                <input type="number" name="unit_cost" id="addStockUnitCost" placeholder="e.g. 165.00" min="0" step="0.01">
             </div>
 
             <div class="form-group">
@@ -867,7 +955,12 @@
     </div>
 </div>
 
-<!-- ④ LOG WASTE / SPOILAGE MODAL (Ingredients only) -->
+{% endif %}
+
+<!-- ④ LOG WASTE / SPOILAGE MODAL (Ingredients only) — Owner AND Staff.
+     Cost fields are intentionally never in this form; Staff never sees
+     peso values here, only the Owner-only Audit Log shows the estimated
+     loss computed server-side from the item's unit cost. -->
 <div id="wasteModal" class="modal">
     <div class="modal-box">
         <h2>🗑 Log Waste / Spoilage</h2>
@@ -935,8 +1028,6 @@
         </form>
     </div>
 </div>
-
-{% endif %}
 
 <!-- STAFF: Request New Item Modal -->
 {% if request.user.role != 'OWNER' %}
@@ -1022,14 +1113,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const today = new Date().toISOString().split('T')[0];
     const addStockDate = document.getElementById('addStockDate');
     if (addStockDate) addStockDate.value = today;
+
+    // ── Add New Entry: "Number of Packages" convenience — auto-fills
+    // Initial Stock from packages × package size, e.g. 10 boxes of 100mL
+    // each = 1000mL, without making the owner do that math by hand.
+    // Initial Stock stays directly editable too, in case the item isn't
+    // bought in whole packages.
+    const entryPackagesCount  = document.getElementById('entryPackagesCount');
+    const entryPackageSize    = document.getElementById('entryPackageSize');
+    const entryPackageUnit    = document.getElementById('entryPackageUnit');
+    const entryTotalStock     = document.getElementById('entryTotalStock');
+    const entryStockHint      = document.getElementById('entryStockHint');
+    const entryUnitSelectEl   = document.getElementById('entryUnitSelect');
+
+    function recalcEntryStockFromPackages() {
+        const packages = parseFloat(entryPackagesCount.value);
+        const size     = parseFloat(entryPackageSize.value);
+        if (!isNaN(packages) && packages > 0 && !isNaN(size) && size > 0) {
+            const total = Math.round(packages * size * 100) / 100;
+            entryTotalStock.value = total;
+            const unitLabel = entryPackageUnit.options[entryPackageUnit.selectedIndex]?.text || 'package';
+            entryStockHint.textContent = `= ${packages} ${unitLabel.toLowerCase()}${packages == 1 ? '' : 's'} × ${size} ${entryUnitSelectEl.value}/${unitLabel.toLowerCase()}`;
+        } else {
+            entryStockHint.textContent = '';
+        }
+    }
+    if (entryPackagesCount) {
+        entryPackagesCount.addEventListener('input', recalcEntryStockFromPackages);
+        entryPackageSize.addEventListener('input', recalcEntryStockFromPackages);
+        entryPackageUnit.addEventListener('change', recalcEntryStockFromPackages);
+    }
 });
 
 // ── Open Edit Modal ──
-function openEditModal(id, name, totalStock, unit, threshold, expiryDate) {
+function openEditModal(id, name, totalStock, unit, threshold, unitCost, packageSize, packageUnit, maxStock, expiryDate) {
     document.getElementById('editItemId').value   = id;
     document.getElementById('editItemName').value = name;
     document.getElementById('editTotalStock').value = totalStock;
     document.getElementById('editRestockThreshold').value = threshold;
+    document.getElementById('editUnitCost').value    = unitCost    ?? '';
+    document.getElementById('editPackageSize').value = packageSize ?? '';
+    document.getElementById('editMaxStock').value    = maxStock    ?? '';
 
     const unitSelect = document.getElementById('editUnitSelect');
     if (unitSelect) {
@@ -1037,6 +1161,9 @@ function openEditModal(id, name, totalStock, unit, threshold, expiryDate) {
         const opt = [...unitSelect.options].find(o => o.value === unit);
         if (opt) opt.selected = true;
     }
+
+    const packageUnitSelect = document.getElementById('editPackageUnit');
+    if (packageUnitSelect) packageUnitSelect.value = packageUnit || '';
 
     const expiryGroup = document.getElementById('editExpiryGroup');
     const expiryInput = document.getElementById('editExpiryDate');
@@ -1050,14 +1177,41 @@ function openEditModal(id, name, totalStock, unit, threshold, expiryDate) {
 }
 
 // ── Open Add Stock Modal ──
-function openAddStock(id, name, unit) {
+let _addStockPackageSize = null;
+function openAddStock(id, name, unit, packageSize) {
     document.getElementById('addStockItemId').value   = id;
     document.getElementById('addStockItemName').textContent = name;
     document.getElementById('addStockUnit').value     = unit;
+    document.getElementById('addStockPackages').value = '';
+    document.getElementById('addStockUnitCost').value = '';
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('addStockDate').value = today;
+
+    _addStockPackageSize = packageSize || null;
+    const packagesGroup = document.getElementById('addStockPackagesGroup');
+    const qtyHint       = document.getElementById('addStockQtyHint');
+    if (_addStockPackageSize) {
+        packagesGroup.style.display = 'block';
+        qtyHint.textContent = `(auto-filled from packages × ${_addStockPackageSize} ${unit}/package — or type a small quantity directly)`;
+    } else {
+        packagesGroup.style.display = 'none';
+        qtyHint.textContent = '';
+    }
+    document.getElementById('addStockQty').value = '';
+
     openModal('addStockModal');
 }
+
+// Bulk purchase convenience: packages × package size auto-fills quantity,
+// without removing the ability to just type a small quantity directly.
+document.getElementById('addStockPackages').addEventListener('input', function () {
+    if (!_addStockPackageSize) return;
+    const packages = parseFloat(this.value);
+    const qtyField = document.getElementById('addStockQty');
+    if (!isNaN(packages) && packages > 0) {
+        qtyField.value = Math.round(packages * _addStockPackageSize * 100) / 100;
+    }
+});
 
 // ── Open Waste Modal ──
 let _wasteMaxQty = 0;

@@ -7,7 +7,6 @@
     <title>{% block title %}CraveCast Dashboard{% endblock %}</title>
 
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
 
     <style>
     /* ── THEME TOKENS ────────────────────────────────────────── */
@@ -42,6 +41,16 @@
     }
 
     :root {
+        /* ── Typography ── */
+        --font-main:     'Aptos', 'Aptos Display', 'Segoe UI', Arial, sans-serif;
+
+        /* ── Status color system ──────────────────────────────
+             green  = Good / Available
+             amber  = Low / Needs Attention
+             red    = Critical / Out of Stock
+             orange = Pending / For Action
+             blue   = Information / Normal
+             gray   = Inactive / Not Available            ── */
         --red:           #ff3d5a;
         --red-dim:       rgba(255,61,90,0.12);
         --red-glow:      rgba(255,61,90,0.35);
@@ -55,28 +64,59 @@
         --amber-dim:     rgba(245,158,11,0.12);
         --green:         #10b981;
         --green-dim:     rgba(16,185,129,0.12);
+        --orange:        #fb923c;
+        --orange-dim:    rgba(251,146,60,0.14);
+        --gray:          #9ca3af;
+        --gray-dim:      rgba(156,163,175,0.16);
         --sidebar-w:     240px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         background: var(--bg);
         color: var(--text);
         overflow-x: hidden;
         transition: background 0.3s, color 0.3s;
     }
 
+    /* ── Visible focus states (accessibility) ── */
+    a:focus-visible,
+    button:focus-visible,
+    .btn:focus-visible,
+    .tab-btn:focus-visible,
+    .action-btn:focus-visible,
+    .nav-icon-btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 2px;
+    }
+
     a { text-decoration: none; color: inherit; }
 
     /* ── SIDEBAR ─────────────────────────────────────────────── */
     .sidebar {
+        /* Sidebar keeps the dark palette in both themes — only the page
+           content switches when the theme toggle is used. */
+        --surface:       #13131f;
+        --surface2:      #1a1a2b;
+        --surface3:      #21213a;
+        --border:        rgba(255,255,255,0.07);
+        --border-hover:  rgba(255,255,255,0.14);
+        --text:          #f0f0f8;
+        --text-muted:    #6b7280;
+        --text-dim:      #4b5563;
+        --invert-logo:   invert(1) brightness(2);
+
         position: fixed;
         top: 0; left: 0;
         width: var(--sidebar-w);
         height: 100%;
         background: var(--surface);
+        color: var(--text);
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
@@ -103,7 +143,7 @@
     }
 
     .logo-wordmark {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-weight: 800;
         font-size: 18px;
         white-space: nowrap;
@@ -114,7 +154,7 @@
     .logo-wordmark span { color: var(--red); }
 
     .nav-section {
-        padding: 20px 14px 6px;
+        padding: 14px 14px 4px;
         font-size: 10px;
         font-weight: 600;
         color: var(--text-dim);
@@ -125,6 +165,8 @@
     }
 
     .sidebar ul { list-style: none; padding: 0 10px; }
+    /* Scroll the menu (not the logo/logout) on short screens instead of clipping items. */
+    .sidebar > ul { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
     .sidebar ul li a {
         display: flex;
@@ -143,13 +185,17 @@
     .sidebar ul li a i { font-size: 18px; flex-shrink: 0; width: 20px; text-align: center; }
     .sidebar ul li a:hover { background: var(--surface3); color: var(--text); }
 
+    /* Active sidebar item — neutral highlight (no red), still clearly
+       distinguishable via a filled background, bold text, and a left accent. */
     .sidebar ul li.active a {
-        background: var(--red-dim);
-        color: var(--red);
-        font-weight: 600;
+        background: var(--surface3);
+        color: var(--text);
+        font-weight: 700;
+        border-left: 3px solid var(--text);
+        padding-left: 9px;
     }
 
-    .sidebar ul li.active a i { color: var(--red); }
+    .sidebar ul li.active a i { color: var(--text); }
 
     .nav-badge {
         margin-left: auto;
@@ -191,6 +237,42 @@
     .sidebar.collapsed .sidebar-footer a span,
     .sidebar.collapsed .nav-badge { opacity: 0; width: 0; }
 
+    /* Minimized: pending-approvals count becomes a dot on the icon. */
+    .sidebar ul li a { position: relative; }
+    .sidebar.collapsed ul li a .nav-badge {
+        position: absolute; top: 6px; left: 28px;
+        width: 8px; height: 8px; padding: 0;
+        font-size: 0; opacity: 1;
+        box-shadow: 0 0 0 2px var(--surface);
+    }
+
+    /* Hover label for icons when the sidebar is minimized (see SIDEBAR TOGGLE JS).
+       Lives on <body> because the sidebar clips anything outside its width. */
+    .sidebar-tip {
+        position: fixed;
+        z-index: 3000;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #21213a;
+        color: #f0f0f8;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        opacity: 0;
+        transform: translate(-4px, -50%);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+    .sidebar-tip.show { opacity: 1; transform: translate(0, -50%); }
+    .sidebar-tip::before {
+        content: '';
+        position: absolute; left: -4px; top: 50%;
+        width: 8px; height: 8px;
+        background: inherit;
+        transform: translateY(-50%) rotate(45deg);
+    }
+
     /* ── TOPNAV ──────────────────────────────────────────────── */
     .content {
         margin-left: var(--sidebar-w);
@@ -228,7 +310,7 @@
     }
 
     .clock-time {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
         color: var(--text);
@@ -302,7 +384,7 @@
         justify-content: center;
         cursor: pointer;
         color: var(--text-muted);
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.3px;
@@ -326,7 +408,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 12px;
         font-weight: 700;
         color: #fff;
@@ -353,7 +435,7 @@
     }
 
     .page-header h1 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 28px;
         font-weight: 800;
         letter-spacing: -0.5px;
@@ -386,28 +468,22 @@
         box-shadow: var(--shadow);
     }
 
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: -30px; right: -30px;
-        width: 80px; height: 80px;
-        border-radius: 50%;
-        opacity: 0.12;
+    /* Summary/stat cards are intentionally neutral — plain black/white/gray,
+       no colored backgrounds or blobs, regardless of the .red/.blue/.teal/
+       .purple/.amber/.green modifier classes still used in markup. Keeping
+       those class names (rather than stripping them from every template)
+       means every summary card across the system stays visually identical
+       with a single change here. */
+    .stat-card::before { content: none; }
+
+    .stat-card.red,
+    .stat-card.blue,
+    .stat-card.teal,
+    .stat-card.purple,
+    .stat-card.amber,
+    .stat-card.green {
+        border-top: 3px solid var(--border-hover);
     }
-
-    .stat-card.red::before    { background: var(--red); }
-    .stat-card.blue::before   { background: var(--blue); }
-    .stat-card.teal::before   { background: var(--teal); }
-    .stat-card.purple::before { background: var(--purple); }
-    .stat-card.amber::before  { background: var(--amber); }
-    .stat-card.green::before  { background: var(--green); }
-
-    .stat-card.red    { border-top: 3px solid var(--red); }
-    .stat-card.blue   { border-top: 3px solid var(--blue); }
-    .stat-card.teal   { border-top: 3px solid var(--teal); }
-    .stat-card.purple { border-top: 3px solid var(--purple); }
-    .stat-card.amber  { border-top: 3px solid var(--amber); }
-    .stat-card.green  { border-top: 3px solid var(--green); }
 
     .stat-label {
         font-size: 11px;
@@ -419,19 +495,13 @@
     }
 
     .stat-value {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 26px;
         font-weight: 800;
         letter-spacing: -1px;
         margin-bottom: 6px;
+        color: var(--text);
     }
-
-    .stat-card.red    .stat-value { color: var(--red); }
-    .stat-card.blue   .stat-value { color: var(--blue); }
-    .stat-card.teal   .stat-value { color: var(--teal); }
-    .stat-card.purple .stat-value { color: var(--purple); }
-    .stat-card.amber  .stat-value { color: var(--amber); }
-    .stat-card.green  .stat-value { color: var(--green); }
 
     .stat-sub { font-size: 12px; color: var(--text-muted); }
     .stat-sub.up   { color: var(--green); }
@@ -487,6 +557,8 @@
     .badge-purple { background: var(--purple-dim); color: var(--purple); }
     .badge-amber  { background: var(--amber-dim);  color: var(--amber); }
     .badge-teal   { background: var(--teal-dim);   color: var(--teal); }
+    .badge-orange { background: var(--orange-dim); color: var(--orange); }
+    .badge-gray   { background: var(--gray-dim);   color: var(--gray); }
 
     /* ── BUTTONS ─────────────────────────────────────────────── */
     .btn {
@@ -495,7 +567,7 @@
         gap: 8px;
         padding: 11px 20px;
         border-radius: 10px;
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
@@ -503,8 +575,11 @@
         transition: all 0.2s;
     }
 
-    .btn-primary { background: var(--red); color: #fff; }
-    .btn-primary:hover { background: #e0304a; transform: translateY(-1px); }
+    /* Primary action color is blue, not the brand red — red is reserved
+       for destructive actions (delete/reject/deactivate), which already
+       override this with an explicit background:var(--red) where needed. */
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #2f6fe0; transform: translateY(-1px); }
 
     .btn-ghost {
         background: var(--surface2);
@@ -545,7 +620,7 @@
     }
 
     .modal-box h2 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 20px;
         font-weight: 800;
         margin-bottom: 24px;
@@ -575,6 +650,14 @@
         margin-bottom: 7px;
     }
 
+    /* Required-field indicator: auto-marks labels sitting directly above a required input */
+    .form-group label:has(+ input[required])::after,
+    .form-group label:has(+ select[required])::after,
+    .form-group label:has(+ textarea[required])::after {
+        content: " *";
+        color: var(--red);
+    }
+
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -584,7 +667,7 @@
         border: 1px solid var(--border);
         border-radius: 9px;
         color: var(--text);
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         transition: border-color 0.2s, background 0.3s;
     }
@@ -663,6 +746,39 @@
         .sidebar-footer a span { display: none; }
         .content { margin-left: 64px; }
         .nav-clock { display: none; }
+        .nav-welcome { display: none; }
+    }
+
+    /* Wide tables scroll inside their card instead of pushing the page sideways
+       (wrapper added by the TABLE SCROLL script). */
+    .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    .sidebar-backdrop { display: none; }
+
+    /* ── PHONES: sidebar becomes a slide-out menu (☰), pages get full width ── */
+    @media (max-width: 640px) {
+        .sidebar {
+            width: var(--sidebar-w);
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+        }
+        .sidebar.mobile-open { transform: none; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+        .sidebar .logo-wordmark,
+        .sidebar .nav-section { display: block; }
+        .sidebar ul li a span,
+        .sidebar-footer a span { display: inline; }
+
+        .sidebar-backdrop {
+            position: fixed; inset: 0; z-index: 1999;
+            background: rgba(0,0,0,0.5);
+        }
+        .sidebar-backdrop.show { display: block; }
+
+        .content, .content.collapsed { margin-left: 0; }
+        main { padding: 20px 16px; }
+        nav { padding-left: 16px; padding-right: 16px; }
+        .page-header { flex-wrap: wrap; gap: 12px; }
+        .page-header h1 { font-size: 24px; }
     }
     </style>
 
@@ -687,28 +803,28 @@
         <div class="logo-wordmark">Crave<span>Cast</span></div>
     </a>
 
-    <div class="nav-section" data-en="Main" data-tl="Pangunahin">Main</div>
+    {# Grouped by the owner's daily routine: upload sales → check stock → #}
+    {# check forecast → act on requests. Page URLs/names are unchanged.   #}
     <ul>
         <li class="{% if request.resolver_match.url_name == 'owner-dashboard' or request.resolver_match.url_name == 'staff-dashboard' %}active{% endif %}">
             <a href="{% if request.user.role == 'OWNER' %}{% url 'owner-dashboard' %}{% else %}{% url 'staff-dashboard' %}{% endif %}">
                 <i class='bx bxs-dashboard'></i><span data-en="Dashboard" data-tl="Dashboard">Dashboard</span>
             </a>
         </li>
+
+        <div class="nav-section" data-en="Daily" data-tl="Araw-araw">Daily</div>
+        {% if request.user.role == "OWNER" %}
+        <li class="{% if request.resolver_match.url_name == 'view-upload-data' %}active{% endif %}">
+            <a href="{% url 'view-upload-data' %}"><i class='bx bx-cloud-upload'></i><span data-en="Upload Sales" data-tl="I-upload ang Benta">Upload Sales</span></a>
+        </li>
+        {% endif %}
         <li class="{% if request.resolver_match.url_name == 'view-inventory' %}active{% endif %}">
             <a href="{% url 'view-inventory' %}"><i class='bx bx-package'></i><span data-en="Inventory" data-tl="Imbentaryo">Inventory</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'recipe_list' or request.resolver_match.url_name == 'recipe_add' or request.resolver_match.url_name == 'recipe_edit' %}active{% endif %}">
             <a href="{% url 'recipe_list' %}"><i class='bx bx-food-menu'></i><span data-en="Recipes" data-tl="Recipes">Recipes</span></a>
         </li>
-        <li class="{% if request.resolver_match.url_name == 'view-forecast' %}active{% endif %}">
-            <a href="{% url 'view-forecast' %}"><i class='bx bx-analyse'></i><span data-en="Forecast" data-tl="Forecast">Forecast</span></a>
-        </li>
-        <li class="{% if request.resolver_match.url_name == 'view-events' %}active{% endif %}">
-            <a href="{% url 'view-events' %}"><i class='bx bx-calendar'></i><span data-en="Events" data-tl="Mga Event">Events</span></a>
-        </li>
-
         {% if request.user.role == "OWNER" %}
-        <div class="nav-section" data-en="Owner" data-tl="Owner">Owner</div>
         <li class="{% if request.resolver_match.url_name == 'view-approvals' %}active{% endif %}">
             <a href="{% url 'view-approvals' %}">
                 <i class='bx bx-check-shield'></i>
@@ -716,14 +832,33 @@
                 {% if pending_approval_count %}<span class="nav-badge">{{ pending_approval_count }}</span>{% endif %}
             </a>
         </li>
-        <li class="{% if request.resolver_match.url_name == 'view-upload-data' %}active{% endif %}">
-            <a href="{% url 'view-upload-data' %}"><i class='bx bx-cloud-upload'></i><span data-en="Upload Data &amp; Sales" data-tl="I-upload ang Datos ng Benta">Upload Data &amp; Sales</span></a>
+        {% endif %}
+
+        <div class="nav-section" data-en="Forecast" data-tl="Forecast">Forecast</div>
+        <li class="{% if request.resolver_match.url_name == 'view-forecast' %}active{% endif %}">
+            <a href="{% url 'view-forecast' %}"><i class='bx bx-analyse'></i><span data-en="Demand Forecast" data-tl="Forecast ng Demand">Demand Forecast</span></a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'view-forecast-predicted' %}active{% endif %}">
+            <a href="{% url 'view-forecast-predicted' %}"><i class='bx bx-cart-add'></i><span data-en="Restock Plan" data-tl="Plano sa Pag-restock">Restock Plan</span></a>
+        </li>
+        {% if request.user.role == "OWNER" %}
+        <li class="{% if request.resolver_match.url_name == 'view-forecast-results' %}active{% endif %}">
+            <a href="{% url 'view-forecast-results' %}"><i class='bx bx-check-double'></i><span data-en="Forecast Accuracy" data-tl="Katumpakan ng Forecast">Forecast Accuracy</span></a>
+        </li>
+        {% endif %}
+
+        <div class="nav-section" data-en="Plan" data-tl="Plano">Plan</div>
+        <li class="{% if request.resolver_match.url_name == 'view-events' %}active{% endif %}">
+            <a href="{% url 'view-events' %}"><i class='bx bx-calendar'></i><span data-en="Events &amp; Promos" data-tl="Mga Event at Promo">Events &amp; Promos</span></a>
+        </li>
+
+        {% if request.user.role == "OWNER" %}
+        <div class="nav-section" data-en="Manage" data-tl="Pamahalaan">Manage</div>
+        <li class="{% if request.resolver_match.url_name == 'view-employees' or request.resolver_match.url_name == 'employee-edit' %}active{% endif %}">
+            <a href="{% url 'view-employees' %}"><i class='bx bx-group'></i><span data-en="Staff &amp; Pay" data-tl="Staff at Sahod">Staff &amp; Pay</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'admin-management' %}active{% endif %}">
-            <a href="{% url 'admin-management' %}"><i class='bx bx-shield-quarter'></i><span data-en="Admin &amp; Login" data-tl="Admin at Login">Admin &amp; Login</span></a>
-        </li>
-        <li class="{% if request.resolver_match.url_name == 'view-employees' or request.resolver_match.url_name == 'employee-edit' %}active{% endif %}">
-            <a href="{% url 'view-employees' %}"><i class='bx bx-group'></i><span data-en="Employees" data-tl="Mga Empleyado">Employees</span></a>
+            <a href="{% url 'admin-management' %}"><i class='bx bx-shield-quarter'></i><span data-en="Staff Accounts" data-tl="Mga Account ng Staff">Staff Accounts</span></a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'view-settings' %}active{% endif %}">
             <a href="{% url 'view-settings' %}"><i class='bx bx-cog'></i><span data-en="Settings" data-tl="Mga Setting">Settings</span></a>
@@ -761,6 +896,9 @@
             <div class="nav-icon-btn" id="notif-btn" onclick="toggleNotifPanel()">
                 <i class='bx bx-bell'></i>
                 <div class="notif-dot" id="notif-dot" style="display:none;"></div>
+            </div>
+            <div class="nav-welcome" style="font-size:13px; font-weight:600; color:var(--text); white-space:nowrap;">
+                {{ request.user.full_name|default:request.user.username }}
             </div>
             <a href="{% url 'view-settings' %}">
                 <div class="nav-avatar">{{ request.user.username|slice:":2"|upper }}</div>
@@ -805,10 +943,91 @@ setInterval(updateClock, 1000);
 /* ── SIDEBAR TOGGLE ───────────────────────────────────── */
 const sidebar     = document.getElementById('sidebar');
 const mainContent = document.getElementById('main-content');
+const phoneLayout = window.matchMedia('(max-width: 640px)');
+const backdrop    = document.createElement('div');
+backdrop.className = 'sidebar-backdrop';
+document.body.appendChild(backdrop);
+
+function setMobileMenu(open) {
+    sidebar.classList.toggle('mobile-open', open);
+    backdrop.classList.toggle('show', open);
+}
+
 document.getElementById('menu-btn').addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
-    mainContent.classList.toggle('collapsed');
+    if (phoneLayout.matches) {
+        setMobileMenu(!sidebar.classList.contains('mobile-open'));
+    } else {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('collapsed');
+    }
 });
+backdrop.addEventListener('click', () => setMobileMenu(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMobileMenu(false); });
+phoneLayout.addEventListener('change', () => setMobileMenu(false));
+
+/* ── DOUBLE-SUBMIT GUARD ──────────────────────────────── */
+/* A double-click used to send the same POST twice (e.g. two identical staff
+   requests). Block the second submit of a form while the first is in
+   flight. Buttons aren't disabled, since some forms send their choice via
+   the clicked button's name/value (Approve / Reject). */
+document.addEventListener('submit', e => {
+    const form = e.target;
+    if ((form.method || '').toLowerCase() !== 'post' || e.defaultPrevented) return;
+    if (form.dataset.submitting) { e.preventDefault(); return; }
+    form.dataset.submitting = '1';
+    form.style.opacity = '0.7';
+});
+// Coming back via the browser's Back button restores the page as it was — re-enable.
+window.addEventListener('pageshow', () => {
+    document.querySelectorAll('form[data-submitting]').forEach(f => { delete f.dataset.submitting; f.style.opacity = ''; });
+});
+
+/* ── TABLE SCROLL ─────────────────────────────────────── */
+/* Wrap wide tables so they scroll sideways inside their card on small
+   screens, unless something around them already scrolls. */
+document.querySelectorAll('main table').forEach(table => {
+    for (let el = table.parentElement; el && el.tagName !== 'MAIN'; el = el.parentElement) {
+        const ox = getComputedStyle(el).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'table-scroll';
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+});
+
+/* Minimized sidebar: show each icon's name on hover/keyboard focus.
+   Also covers small screens, where the sidebar is always icon-only. */
+(function sidebarTips() {
+    const tip = document.createElement('div');
+    tip.className = 'sidebar-tip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+
+    const isMinimized = () => sidebar.offsetWidth < 100;
+
+    function show(link) {
+        if (!isMinimized()) return;
+        const label = link.querySelector('span[data-en]');
+        if (!label) return;
+        const badge = link.querySelector('.nav-badge');
+        tip.textContent = label.textContent.trim() + (badge ? ` (${badge.textContent.trim()})` : '');
+        const r = link.getBoundingClientRect();
+        tip.style.left = (sidebar.getBoundingClientRect().right + 10) + 'px';
+        tip.style.top  = (r.top + r.height / 2) + 'px';
+        tip.classList.add('show');
+    }
+    const hide = () => tip.classList.remove('show');
+
+    sidebar.querySelectorAll('ul li a, .sidebar-footer a').forEach(link => {
+        link.addEventListener('mouseenter', () => show(link));
+        link.addEventListener('focus',      () => show(link));
+        link.addEventListener('mouseleave', hide);
+        link.addEventListener('blur',       hide);
+    });
+    sidebar.querySelector('ul').addEventListener('scroll', hide);
+    document.getElementById('menu-btn').addEventListener('click', hide);
+})();
 
 /* ── THEME TOGGLE ─────────────────────────────────────── */
 (function initTheme() {

@@ -31,10 +31,10 @@
 
     .signal-item .signal-icon { font-size: 18px; }
 
-    .signal-item.is-active .signal-value { color: var(--red); }
+    .signal-item.is-active .signal-value { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 
     .signal-value {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 15px;
         font-weight: 700;
         color: var(--text);
@@ -69,12 +69,12 @@
 
     /* Prediction */
     .prediction-number {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 56px;
         font-weight: 800;
         letter-spacing: -3px;
         line-height: 1;
-        color: var(--red);
+        color: var(--text);
         margin: 4px 0 2px;
     }
 
@@ -107,10 +107,10 @@
     }
 
     .accuracy-score {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 15px;
         font-weight: 800;
-        color: var(--purple);
+        color: var(--text);
     }
 
     /* Model inputs — small caption line, not a separate panel */
@@ -152,12 +152,13 @@
     .product-bar {
         height: 100%;
         border-radius: 3px;
-        background: linear-gradient(90deg, var(--red), var(--purple));
+        background: var(--text);
+        opacity: 0.75;
         transition: width 0.6s ease;
     }
 
     .product-qty {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 15px;
         font-weight: 800;
         min-width: 36px;
@@ -170,6 +171,10 @@
 
     /* Search */
     .search-row { display: flex; gap: 8px; }
+    @media (max-width: 640px) {
+        .search-row { flex-wrap: wrap; width: 100%; }
+        .search-row input { flex-basis: 100%; }
+    }
 
     .search-row input {
         flex: 1;
@@ -178,11 +183,11 @@
         border: 1px solid var(--border);
         border-radius: 10px;
         color: var(--text);
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         transition: border-color 0.2s;
     }
-    .search-row input:focus { outline: none; border-color: var(--red); }
+    .search-row input:focus { outline: none; border-color: var(--blue); }
 
     /* Location pill */
     .location-pill {
@@ -223,7 +228,7 @@
     }
 
     .section-title {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
         color: var(--text);
@@ -276,8 +281,9 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--purple);
-        background: var(--purple-dim);
+        color: var(--text);
+        background: var(--surface3);
+        border: 1px solid var(--border-hover);
         padding: 2px 7px;
         border-radius: 6px;
         margin-bottom: 2px;
@@ -295,22 +301,22 @@
 
     .month-bar:hover { transform: scaleX(1.08); filter: brightness(1.15); }
 
-    .month-bar.is-current-week { background: linear-gradient(180deg, var(--red), var(--purple)); }
+    .month-bar.is-current-week { background: var(--text); }
     .month-bar.is-past { background: var(--surface2); border: 1px solid var(--border-hover, var(--border)); }
-    .month-bar.is-future { background: linear-gradient(180deg, rgba(139,92,246,0.35), rgba(139,92,246,0.12)); }
+    .month-bar.is-future { background: var(--text-dim); opacity: 0.5; }
 
     .month-bar-label { font-size: 10px; font-weight: 600; color: var(--text-dim); }
     .month-bar-val   {
         font-size: 12px;
         font-weight: 800;
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         color: var(--text);
         background: var(--surface2);
         padding: 2px 8px;
         border-radius: 6px;
         border: 1px solid var(--border);
     }
-    .month-bar-col.is-current-week .month-bar-val { color: var(--red); border-color: rgba(255,61,90,0.3); }
+    .month-bar-col.is-current-week .month-bar-val { color: var(--bg); background: var(--text); border-color: var(--text); }
 
     .month-stat-strip {
         display: grid;
@@ -352,7 +358,7 @@
     }
 
     .month-stat .stat-value {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 19px;
         font-weight: 800;
         letter-spacing: -0.5px;
@@ -361,11 +367,11 @@
     }
 
     .month-stat.accent-stat {
-        background: linear-gradient(135deg, var(--red-dim), var(--purple-dim));
-        border: 1px solid rgba(139,92,246,0.25);
+        background: var(--surface3);
+        border: 1px solid var(--border-hover);
     }
     .month-stat.accent-stat .month-stat-icon { background: rgba(255,255,255,0.08); }
-    .month-stat.accent-stat .stat-value { color: var(--purple); }
+    .month-stat.accent-stat .stat-value { color: var(--text); }
 
     .month-peak-range { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
@@ -635,7 +641,8 @@
             const response = await fetch(URL);
             const data     = await response.json();
             if (data.cod !== "200") {
-                predictionReason.textContent = L("Location not found. Try another city.", "Hindi mahanap ang lokasyon. Subukan ang ibang lungsod.");
+                predictionReason.textContent = L("Weather unavailable — showing forecast from historical data instead.", "Hindi available ang panahon — ipinapakita ang forecast mula sa nakaraang datos.");
+                runForecastWithoutWeather();
                 return;
             }
             updateWeatherSignals(data);
@@ -651,9 +658,29 @@
                 renderMonthly(await monthlyRes.json());
             } catch (err) {
                 console.error('Monthly forecast error:', err);
+                fetchMonthlyForecast();
             }
         } catch (error) {
-            predictionReason.textContent = L("Connection error. Check your network.", "May problema sa koneksyon. Suriin ang iyong internet.");
+            predictionReason.textContent = L("Weather unavailable — showing forecast from historical data instead.", "Hindi available ang panahon — ipinapakita ang forecast mula sa nakaraang datos.");
+            runForecastWithoutWeather();
+        }
+    }
+
+    /* Weather is only a bonus input — the ML engine and monthly overview
+       both already fall back to historical/default data server-side, so
+       the page should still show a forecast when weather can't be fetched
+       (no API key configured, city not found, network error, etc). */
+    function runForecastWithoutWeather() {
+        fetchMLPrediction(30, 60);
+        fetchMonthlyForecast();
+    }
+
+    async function fetchMonthlyForecast() {
+        try {
+            const monthlyRes = await fetch('/forecast/monthly-api/');
+            renderMonthly(await monthlyRes.json());
+        } catch (err) {
+            console.error('Monthly forecast error:', err);
         }
     }
 

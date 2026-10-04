@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F
 from django.utils import timezone
-from datetime import timedelta, datetime
+from datetime import timedelta
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
@@ -12,7 +12,6 @@ from inventory.models import Inventory
 from staff.models import PrepTask
 from staff.prep_utils import generate_daily_prep_tasks
 from accounts.models import User
-import json
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
@@ -57,6 +56,60 @@ def _notify_owner_new_request(request, kind, summary):
 
 # ── DASHBOARD ─────────────────────────────────────────────────────────────────
 
+def _get_staff_dashboard_stats():
+    """Shared helper for the Staff dashboard stat cards — used by both the
+    page render and the 20s-poll JSON endpoint below, so there's one
+    source of truth for these numbers (mirrors owner._get_dashboard_context)."""
+    today  = timezone.now().date()
+    latest = SalesRecord.objects.order_by('-sale_date').values_list('sale_date', flat=True).first()
+    ref_date        = latest if latest else today
+    ref_month_start = ref_date.replace(day=1)
+    seven_days_ago  = ref_date - timedelta(days=6)
+
+    daily_sold = SalesRecord.objects.filter(
+        sale_date__gte=ref_month_start, sale_date__lte=ref_date
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+
+    daily_orders = SalesRecord.objects.filter(
+        sale_date__gte=ref_month_start, sale_date__lte=ref_date
+    ).count()
+
+    weekly_revenue = SalesRecord.objects.filter(
+        sale_date__gte=seven_days_ago, sale_date__lte=ref_date
+    ).aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
+
+    inventory_queryset = Inventory.objects.all()
+    total_items        = inventory_queryset.count()
+    ingredient_count   = inventory_queryset.filter(category='Stock').count()
+    supply_count       = inventory_queryset.filter(category='Supply').count()
+    low_stock_query    = inventory_queryset.filter(stock_qty__lte=F('restock_threshold')).order_by('stock_qty')
+    low_stock_count    = low_stock_query.count()
+
+    return {
+        'daily_sold':       daily_sold,
+        'daily_orders':     daily_orders,
+        'weekly_sales':     weekly_revenue,
+        'total_items':      total_items,
+        'ingredient_count': ingredient_count,
+        'supply_count':     supply_count,
+        'low_stock_count':  low_stock_count,
+        'low_stock_items':  low_stock_query[:5],
+    }
+
+
+@login_required
+def staff_dashboard_stats_api(request):
+    """20-second dashboard poll (Phase 6) — same numbers as the page,
+    computed from the same helper, no full page reload needed."""
+    stats = _get_staff_dashboard_stats()
+    return JsonResponse({
+        'total_items':      stats['total_items'],
+        'ingredient_count': stats['ingredient_count'],
+        'supply_count':     stats['supply_count'],
+        'low_stock_count':  stats['low_stock_count'],
+    })
+
+
 @login_required
 def staff_dashboard_view(request):
     current_role = getattr(request.user, 'role', '').strip().upper()
@@ -87,27 +140,18 @@ def staff_dashboard_view(request):
     latest  = SalesRecord.objects.order_by('-sale_date').values_list('sale_date', flat=True).first()
     ref_date        = latest if latest else today
     ref_month_start = ref_date.replace(day=1)
-    seven_days_ago  = ref_date - timedelta(days=6)
-
-    daily_sold = SalesRecord.objects.filter(
-        sale_date__gte=ref_month_start, sale_date__lte=ref_date
-    ).aggregate(total=Sum('quantity'))['total'] or 0
-
-    daily_orders = SalesRecord.objects.filter(
-        sale_date__gte=ref_month_start, sale_date__lte=ref_date
-    ).count()
-
-    weekly_revenue = SalesRecord.objects.filter(
-        sale_date__gte=seven_days_ago, sale_date__lte=ref_date
-    ).aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
 
     inventory_queryset = Inventory.objects.all()
-    total_items        = inventory_queryset.count()
-    ingredient_count   = inventory_queryset.filter(category='Stock').count()
-    supply_count       = inventory_queryset.filter(category='Supply').count()
-    low_stock_query    = inventory_queryset.filter(stock_qty__lte=F('restock_threshold')).order_by('stock_qty')
-    low_stock_count    = low_stock_query.count()
-    low_stock_items    = low_stock_query[:5]
+
+    stats          = _get_staff_dashboard_stats()
+    daily_sold     = stats['daily_sold']
+    daily_orders   = stats['daily_orders']
+    weekly_revenue = stats['weekly_sales']
+    total_items      = stats['total_items']
+    ingredient_count = stats['ingredient_count']
+    supply_count     = stats['supply_count']
+    low_stock_count  = stats['low_stock_count']
+    low_stock_items  = stats['low_stock_items']
 
     top_sales = (
         SalesRecord.objects.filter(
@@ -126,33 +170,6 @@ def staff_dashboard_view(request):
         }
         for item in top_sales
     ]
-
-    chart_labels = []
-    chart_values = []
-    cur_year  = ref_month_start.year
-    cur_month = ref_month_start.month
-    for _ in range(7):
-        m_start = datetime(cur_year, cur_month, 1).date()
-        m_end   = (datetime(cur_year, cur_month + 1, 1).date() - timedelta(days=1)
-                   if cur_month != 12
-                   else datetime(cur_year + 1, 1, 1).date() - timedelta(days=1))
-        chart_labels.insert(0, m_start.strftime('%b %Y'))
-        rev = SalesRecord.objects.filter(
-            sale_date__gte=m_start, sale_date__lte=m_end
-        ).aggregate(total=Sum(F('quantity') * F('price')))['total'] or 0
-        chart_values.insert(0, float(rev))
-        cur_month -= 1
-        if cur_month == 0:
-            cur_month = 12
-            cur_year -= 1
-
-    top_products = (
-        SalesRecord.objects.values('product_name')
-        .annotate(total_qty=Sum('quantity'))
-        .order_by('-total_qty')[:3]
-    )
-    top_product_labels = [p['product_name'] for p in top_products]
-    top_product_values = [p['total_qty']    for p in top_products]
 
     my_inventory_requests = InventoryRequest.objects.filter(
         requested_by=request.user
@@ -177,10 +194,6 @@ def staff_dashboard_view(request):
         'low_stock_items':       low_stock_items,
         'inventory':             inventory_queryset[:10],
         'best_sellers':          dynamic_best_sellers,
-        'chart_labels':          json.dumps(chart_labels),
-        'chart_values':          json.dumps(chart_values),
-        'top_product_labels':    json.dumps(top_product_labels),
-        'top_product_values':    json.dumps(top_product_values),
         'my_inventory_requests': my_inventory_requests,
         'my_event_requests':     my_event_requests,
         'prep_tasks':            prep_tasks,
@@ -234,6 +247,10 @@ def staff_event_request_view(request):
         event_name  = request.POST.get('event_name', '').strip()
         event_date  = request.POST.get('event_date', '').strip()
         description = request.POST.get('description', '').strip()
+        location    = request.POST.get('location', '').strip()
+        start_time  = request.POST.get('start_time') or None
+        end_date    = request.POST.get('end_date') or None
+        end_time    = request.POST.get('end_time') or None
 
         if event_name and event_date:
             EventRequest.objects.create(
@@ -241,6 +258,10 @@ def staff_event_request_view(request):
                 event_name=event_name,
                 event_date=event_date,
                 description=description,
+                location=location,
+                start_time=start_time,
+                end_date=end_date,
+                end_time=end_time,
             )
             _notify_owner_new_request(
                 request, 'Event',
@@ -265,16 +286,29 @@ def events_view(request):
         event_name  = request.POST.get('event_name')
         event_date  = request.POST.get('event_date')
         description = request.POST.get('description', '')
+        location    = request.POST.get('location', '').strip()
+        start_time  = request.POST.get('start_time') or None
+        end_date    = request.POST.get('end_date') or None
+        end_time    = request.POST.get('end_time') or None
         OwnerEvent.objects.create(
             event_name=event_name,
             event_date=event_date,
             description=description,
+            location=location,
+            start_time=start_time,
+            end_date=end_date,
+            end_time=end_time,
         )
         messages.success(request, 'Event created successfully.')
         return redirect('view-events')
 
+    # An event only archives once its END date has passed — a multi-day
+    # event doesn't disappear from "Upcoming" while it's still ongoing.
     today = timezone.now().date()
-    OwnerEvent.objects.filter(event_date__lt=today, is_archived=False).update(is_archived=True)
+    for ev in OwnerEvent.objects.filter(is_archived=False):
+        if ev.effective_end_date < today:
+            ev.is_archived = True
+            ev.save(update_fields=['is_archived'])
 
     upcoming  = OwnerEvent.objects.filter(is_archived=False).order_by('event_date')
     archived  = OwnerEvent.objects.filter(is_archived=True).order_by('-event_date')

@@ -7,9 +7,14 @@
 <style>
     /* ── Tab bar (reuse your existing style) ── */
     .tab-bar { display:flex; gap:4px; margin-bottom:24px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:5px; width:fit-content; }
+    @media (max-width: 640px) {
+        .tab-bar { width:100%; overflow-x:auto; }
+        .tab-btn { padding:9px 14px; white-space:nowrap; }
+        .recipe-grid { grid-template-columns:1fr; }
+    }
     .tab-btn  { padding:9px 22px; border-radius:9px; font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all .2s; text-decoration:none; border:none; background:none; }
     .tab-btn:hover { color:var(--text); background:var(--surface2); }
-    .tab-btn.active-tab { background:var(--red); color:#fff; }
+    .tab-btn.active-tab { background:var(--text); color:var(--bg); }
 
     /* ── Recipe card grid ── */
     .recipe-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px; }
@@ -30,7 +35,7 @@
         margin-bottom:14px;
     }
 
-    .recipe-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; color:var(--text); }
+    .recipe-title { font-family:var(--font-main); font-size:15px; font-weight:800; color:var(--text); }
 
     .can-make-badge {
         display:inline-flex; align-items:center; gap:5px;
@@ -38,8 +43,9 @@
         font-size:12px; font-weight:700;
     }
     .can-make-ok   { background:var(--green-dim); color:var(--green); }
+    .can-make-warn { background:var(--amber-dim); color:var(--amber); }
     .can-make-low  { background:var(--red-dim);   color:var(--red); }
-    .can-make-none { background:var(--surface3);  color:var(--text-muted); }
+    .can-make-none { background:var(--gray-dim);  color:var(--gray); }
 
     .ingredient-row {
         display:flex; align-items:center; justify-content:space-between;
@@ -54,7 +60,8 @@
         padding:2px 8px; border-radius:6px;
     }
     .stock-ok   { background:var(--green-dim); color:var(--green); }
-    .stock-low  { background:var(--red-dim);   color:var(--red); }
+    .stock-low  { background:var(--amber-dim); color:var(--amber); }
+    .stock-out  { background:var(--red-dim);   color:var(--red); }
 
     .recipe-actions { display:flex; gap:8px; margin-top:16px; }
     .btn-sm { padding:7px 14px; font-size:12px; }
@@ -72,6 +79,21 @@
         font-size:11px; font-weight:600;
     }
 
+    /* ── Upcoming-event advisory banner ── */
+    .restock-banner {
+        background: var(--amber-dim);
+        border: 1px solid rgba(245,158,11,0.35);
+        border-left: 3px solid var(--amber);
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .restock-banner-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .restock-banner-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
+    .restock-banner-items { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
     /* ── Empty state ── */
     .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); }
     .empty-state .emoji { font-size:40px; margin-bottom:12px; }
@@ -86,9 +108,11 @@
         <h1 data-en="Recipes &amp; Inventory Status" data-tl="Recipes &amp; Status ng Imbentaryo">Recipes & Inventory Status</h1>
         <p data-en="Define what each product uses — inventory auto-deducts on every upload" data-tl="Itakda kung ano ang gamit ng bawat produkto — awtomatikong babawasan ang stock sa bawat upload">Define what each product uses — inventory auto-deducts on every upload</p>
     </div>
+    {% if not read_only %}
     <a href="{% url 'recipe_add' %}" class="btn btn-primary">
         <i class='bx bx-plus'></i> <span data-en="Add Recipe" data-tl="Magdagdag ng Recipe">Add Recipe</span>
     </a>
+    {% endif %}
 </div>
 
 <!-- VIEW TABS -->
@@ -111,11 +135,13 @@
                 {% if item.can_make == '—' %}
                     <span class="can-make-badge can-make-none">— <span data-en="no ingredients" data-tl="walang sangkap">no ingredients</span></span>
                 {% elif item.can_make == 0 %}
-                    <span class="can-make-badge can-make-low">⚠ 0 <span data-en="left" data-tl="natitira">left</span></span>
+                    <span class="can-make-badge can-make-low">🔴 0 <span data-en="left" data-tl="natitira">left</span></span>
                 {% elif item.can_make <= 5 %}
-                    <span class="can-make-badge can-make-low">⚠ {{ item.can_make }} <span data-en="left" data-tl="natitira">left</span></span>
+                    <span class="can-make-badge can-make-low">🔴 {{ item.can_make }} <span data-en="left" data-tl="natitira">left</span></span>
+                {% elif item.can_make <= 20 %}
+                    <span class="can-make-badge can-make-warn">🟡 {{ item.can_make }} <span data-en="servings" data-tl="serving">servings</span></span>
                 {% else %}
-                    <span class="can-make-badge can-make-ok">✓ {{ item.can_make }} <span data-en="servings" data-tl="serving">servings</span></span>
+                    <span class="can-make-badge can-make-ok">🟢 {{ item.can_make }} <span data-en="servings" data-tl="serving">servings</span></span>
                 {% endif %}
             </div>
 
@@ -123,10 +149,10 @@
             {% for line in r.ingredients.all %}
             <div class="ingredient-row">
                 <span class="ingredient-name">{{ line.inventory_item.item_name }}</span>
-<span class="ingredient-qty">{{ line.qty_per_serving|floatformat:0 }} {{ line.inventory_item.unit }} / serving</span>
+<span class="ingredient-qty">{{ line.qty_per_serving|floatformat:"-3" }} {{ line.inventory_item.unit }} / serving</span>
                 <span class="ingredient-stock
-                    {% if line.inventory_item.stock_qty <= line.inventory_item.restock_threshold %}stock-low{% else %}stock-ok{% endif %}">
-{{ line.inventory_item.stock_qty|floatformat:0 }} {{ line.inventory_item.unit }}
+                    {% if line.inventory_item.stock_qty <= 0 or line.inventory_item.is_expired %}stock-out{% elif line.inventory_item.stock_qty <= line.inventory_item.restock_threshold %}stock-low{% else %}stock-ok{% endif %}">
+{{ line.inventory_item.stock_qty|floatformat:"-2" }} {{ line.inventory_item.unit }}{% if line.inventory_item.is_expired %} · expired{% endif %}
                 </span>
             </div>
             {% empty %}
@@ -141,6 +167,7 @@
             </p>
             {% endif %}
 
+            {% if not read_only %}
             <div class="recipe-actions">
                 <a href="{% url 'recipe_edit' r.pk %}" class="btn btn-ghost btn-sm" style="flex:1; text-align:center;">
                     <i class='bx bx-edit'></i> <span data-en="Edit" data-tl="I-edit">Edit</span>
@@ -153,6 +180,7 @@
                     </button>
                 </form>
             </div>
+            {% endif %}
         </div>
         {% endwith %}
         {% endfor %}
@@ -163,9 +191,11 @@
         <div class="emoji">🍵</div>
         <p data-en="No recipes defined yet." data-tl="Wala pang recipe na naitakda.">No recipes defined yet.</p>
         <p data-en="Add a recipe to connect your products to inventory ingredients." data-tl="Magdagdag ng recipe para ikonekta ang produkto sa mga sangkap.">Add a recipe to connect your products to inventory ingredients.</p>
+        {% if not read_only %}
         <a href="{% url 'recipe_add' %}" class="btn btn-primary" style="margin-top:16px;">
             <i class='bx bx-plus'></i> <span data-en="Add First Recipe" data-tl="Magdagdag ng Unang Recipe">Add First Recipe</span>
         </a>
+        {% endif %}
     </div>
     {% endif %}
 </div>
@@ -208,11 +238,11 @@
                         {% if item.can_make == 0 %}
                             <span class="badge badge-red">🔴 <span data-en="Out of Stock" data-tl="Naubos ang Stock">Out of Stock</span></span>
                         {% elif item.can_make <= 5 %}
-                            <span class="badge badge-red">⚠ <span data-en="Critical Low" data-tl="Kritikal na Mababa">Critical Low</span></span>
+                            <span class="badge badge-red">🔴 <span data-en="Critical Low" data-tl="Kritikal na Mababa">Critical Low</span></span>
                         {% elif item.can_make <= 20 %}
-                            <span class="badge" style="background:var(--yellow-dim,#fef3c7); color:#92400e;">⚡ <span data-en="Low" data-tl="Mababa">Low</span></span>
+                            <span class="badge badge-amber">🟡 <span data-en="Low" data-tl="Mababa">Low</span></span>
                         {% else %}
-                            <span class="badge badge-green">✓ <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
+                            <span class="badge badge-green">🟢 <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
                         {% endif %}
                     </td>
                 </tr>
@@ -235,6 +265,16 @@
         <strong>{{ demand_forecast.day_label }}, {{ demand_forecast.target_date|date:"M d" }}</strong>
         — so a predicted sales spike shows up here before it becomes a stockout.
     </p>
+
+    {% if demand_forecast.event_note %}
+    <div class="restock-banner" style="margin-bottom:16px;">
+        <div class="restock-banner-icon">🎉</div>
+        <div>
+            <div class="restock-banner-title" data-en="Upcoming Event" data-tl="Paparating na Event">Upcoming Event</div>
+            <div class="restock-banner-items">{{ demand_forecast.event_note }}</div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if not demand_forecast.has_enough_data %}
     <div class="empty-state">
@@ -263,7 +303,7 @@
                     <td>
                         <span class="can-make-num" style="font-size:14px;
                             {% if item.status == 'out' %}color:var(--red);
-                            {% elif item.status == 'low' %}color:var(--red);
+                            {% elif item.status == 'low' %}color:var(--amber);
                             {% else %}color:var(--green);{% endif %}">
                             {{ item.remaining_after|floatformat:0 }}
                         </span>
@@ -273,9 +313,9 @@
                         {% if item.status == 'out' %}
                             <span class="badge badge-red">🔴 <span data-en="Will Run Out" data-tl="Maubos">Will Run Out</span></span>
                         {% elif item.status == 'low' %}
-                            <span class="badge badge-red">⚠ <span data-en="Will Be Low" data-tl="Mauubusan">Will Be Low</span></span>
+                            <span class="badge badge-amber">🟡 <span data-en="Will Be Low" data-tl="Mauubusan">Will Be Low</span></span>
                         {% else %}
-                            <span class="badge badge-green">✓ <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
+                            <span class="badge badge-green">🟢 <span data-en="Sufficient" data-tl="Sapat">Sufficient</span></span>
                         {% endif %}
                     </td>
                 </tr>

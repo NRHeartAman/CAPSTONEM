@@ -28,7 +28,7 @@
         border: 1px solid var(--border);
         border-radius: 9px;
         color: var(--text);
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         transition: border-color .2s, background .2s;
         appearance: none;
@@ -46,9 +46,28 @@
     .ingredient-line select:focus,
     .qty-wrap input:focus {
         outline: none;
-        border-color: var(--red);
+        border-color: var(--blue);
         background: var(--surface3);
     }
+
+    .menu-picker-group select {
+        width: 100%;
+        padding: 11px 14px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        color: var(--text);
+        font-family: var(--font-main);
+        font-size: 14px;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 34px;
+    }
+    .menu-picker-group select:focus { outline: none; border-color: var(--blue); }
 
     .ingredient-line select option {
         background: var(--surface2);
@@ -85,7 +104,7 @@
     }
 
     .form-card-title {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 13px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 1px;
         color: var(--text-muted);
@@ -134,9 +153,21 @@
         <div class="form-card">
             <p class="form-card-title">🍵 Product Info</p>
 
+            {% if not recipe and menu_products %}
+            <div class="form-group menu-picker-group">
+                <label>Select From Menu <span style="font-weight:400; color:var(--text-muted);">(optional — auto-fills the recipe below if one already exists)</span></label>
+                <select id="menuProductPicker">
+                    <option value="">— Choose an existing menu item, or type a new one below —</option>
+                    {% for product in menu_products %}
+                    <option value="{{ product }}">{{ product }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
             <div class="form-group">
                 <label>Product Name</label>
-                <input type="text" name="product_name"
+                <input type="text" name="product_name" id="productNameInput"
                        value="{{ recipe.product_name|default:'' }}"
                        placeholder="e.g. Hokkaido Milk Tea"
                        required>
@@ -145,7 +176,7 @@
 
             <div class="form-group">
                 <label>Notes <span style="font-weight:400; color:var(--text-muted);">(optional)</span></label>
-                <input type="text" name="notes"
+                <input type="text" name="notes" id="notesInput"
                        value="{{ recipe.notes|default:'' }}"
                        placeholder="e.g. 16oz serving, hot or iced">
             </div>
@@ -176,8 +207,8 @@
                         </select>
                         <div class="qty-wrap">
                             <input type="number" name="qty_per_serving[]"
-                                   value="{{ line.qty_per_serving|floatformat:0 }}"
-                                   placeholder="0" step="1" min="1" required>
+                                   value="{{ line.qty_per_serving|stringformat:'g' }}"
+                                   placeholder="0" step="any" min="0.001" required>
                             <span class="unit-badge">{{ line.inventory_item.unit }}</span>
                         </div>
                         <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
@@ -195,7 +226,7 @@
                         </select>
                         <div class="qty-wrap">
                             <input type="number" name="qty_per_serving[]"
-                                   placeholder="0" step="1" min="1" required>
+                                   placeholder="0" step="any" min="0.001" required>
                             <span class="unit-badge">—</span>
                         </div>
                         <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
@@ -208,8 +239,8 @@
             </button>
 
             <p class="unit-hint" style="margin-top: 12px;">
-                💡 Tip: Enter whole numbers — e.g. 200 ml of Milk, 15 g of Sugar per serving.
-                The unit label updates automatically when you pick an ingredient.
+                💡 Tip: Use the ingredient's own unit — e.g. 200 mL of Milk, 15 g of Sugar,
+                or 0.018 kg of Coffee Beans per serving. Decimals are fine.
             </p>
         </div>
 
@@ -236,7 +267,7 @@
         </select>
         <div class="qty-wrap">
             <input type="number" name="qty_per_serving[]"
-                   placeholder="0" step="1" min="1" required>
+                   placeholder="0" step="any" min="0.001" required>
             <span class="unit-badge">—</span>
         </div>
         <button type="button" class="remove-btn" onclick="removeLine(this)">×</button>
@@ -247,6 +278,54 @@
 
 {% block extra_js %}
 <script>
+// product_name -> {notes, ingredients:[{id, qty}]} for every recipe that
+// already exists, embedded once so picking a menu item auto-fills the form
+// instantly (no extra request, no duplicate recipes created).
+const EXISTING_RECIPES = {{ existing_recipes_json|default:"{}"|safe }};
+
+function buildIngredientLine(ingredientId, qty) {
+    const tmpl  = document.getElementById('lineTemplate');
+    const clone = tmpl.content.cloneNode(true);
+    const line  = clone.querySelector('.ingredient-line');
+    const select = line.querySelector('select');
+    const qtyInput = line.querySelector('input[type="number"]');
+    if (ingredientId) {
+        select.value = String(ingredientId);
+        qtyInput.value = qty;
+    }
+    document.getElementById('ingredientLines').appendChild(clone);
+    updateUnit(select);
+}
+
+function applyMenuSelection(productName) {
+    const productInput = document.getElementById('productNameInput');
+    const notesInput   = document.getElementById('notesInput');
+    const linesWrap    = document.getElementById('ingredientLines');
+
+    productInput.value = productName;
+    linesWrap.innerHTML = '';
+
+    const existing = EXISTING_RECIPES[productName];
+    if (existing) {
+        notesInput.value = existing.notes || '';
+        if (existing.ingredients.length) {
+            existing.ingredients.forEach(line => buildIngredientLine(line.id, line.qty));
+        } else {
+            buildIngredientLine(null, null); // has a recipe row but no ingredients yet
+        }
+    } else {
+        notesInput.value = '';
+        buildIngredientLine(null, null); // new product — start with one empty line
+    }
+}
+
+const menuPicker = document.getElementById('menuProductPicker');
+if (menuPicker) {
+    menuPicker.addEventListener('change', function () {
+        if (this.value) applyMenuSelection(this.value);
+    });
+}
+
 function updateUnit(select) {
     const unit  = select.options[select.selectedIndex].dataset.unit || '—';
     const badge = select.closest('.ingredient-line').querySelector('.unit-badge');

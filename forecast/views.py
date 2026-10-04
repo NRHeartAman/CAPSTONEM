@@ -6,6 +6,7 @@ import datetime
 import requests
 
 from .ml_engine import train_and_predict, predict_per_product, get_historical_avg_temp
+from accounts.decorators import owner_required
 
 
 def _get_weather_api_key():
@@ -24,14 +25,15 @@ def _get_weather_api_key():
 
 
 def _get_store_location():
-    """(city, lat, lon) from the Owner's configured store, falling back
-    to sane defaults if Settings has never been saved."""
+    """(city label, lat, lon) from the Owner's configured store, falling
+    back to sane defaults if Settings has never been saved. The weather
+    lookup goes by lat/lon — Store Name is the shop's brand name (shown on
+    the login page), not a city, so it's deliberately not used here."""
     try:
         from owner.models import SystemSetting
         config = SystemSetting.objects.first()
-        if config:
-            city = config.store_name.split(',')[0].strip() if config.store_name else 'Binangonan'
-            return city, config.store_lat, config.store_lon
+        if config and config.store_lat is not None and config.store_lon is not None:
+            return 'Binangonan', config.store_lat, config.store_lon
     except Exception:
         pass
     return 'Binangonan', 14.4667, 121.1833
@@ -58,6 +60,26 @@ def forecast_view(request):
 
 
 @login_required
+def predicted_demand_view(request):
+    """Forecast → Predicted Demand: per-product predicted demand vs. current
+    sellable stock, with an actionable recommended-order quantity. Open to
+    both Owner and Staff — operational info, like the existing Recipes
+    'Outlook' tab this reuses services from."""
+    from inventory.services import get_predicted_demand_report, get_ingredient_demand_forecast
+
+    report   = get_predicted_demand_report(days_ahead=1)
+    # Ingredient-level shopping list: products share ingredients (e.g. Milk),
+    # so "what to buy" has to be totalled per ingredient, not per product.
+    shopping = get_ingredient_demand_forecast(days_ahead=1)
+    to_buy   = [i for i in shopping['items'] if i['to_buy'] > 0]
+    return render(request, 'PAGES/forecast_predicted.html', {
+        'report':      report,
+        'to_buy':      to_buy,
+        'show_costs':  getattr(request.user, 'role', '') == 'OWNER',
+    })
+
+
+@login_required
 def weather_forecast_proxy(request):
     """
     Proxies OpenWeatherMap's 5-day/3-hour forecast so the real API key
@@ -75,8 +97,10 @@ def weather_forecast_proxy(request):
     if lat and lon:
         params['lat'] = lat
         params['lon'] = lon
+    elif city:
+        params['q'] = city
     else:
-        params['q'] = city or _get_store_location()[0]
+        _, params['lat'], params['lon'] = _get_store_location()
 
     try:
         r = requests.get('https://api.openweathermap.org/data/2.5/forecast', params=params, timeout=8)
@@ -108,14 +132,40 @@ def weather_geo_reverse_proxy(request):
         return JsonResponse([], safe=False)
 
 
+def _log_predictions_once(products, target_date):
+    """Locks in today's predicted qty per product the first time it's seen
+    today — later calls this same day don't overwrite it (get_or_create),
+    so Forecast Results always compares actuals against the prediction as
+    it stood before the day played out, never a number computed after."""
+    from .models import ForecastLog
+    for p in products:
+        ForecastLog.objects.get_or_create(
+            product_name=p['name'], target_date=target_date,
+            defaults={'predicted_qty': p['qty']},
+        )
+
+
 @login_required
 def get_prediction_api(request):
-    temp     = float(request.GET.get('temp', 30))
-    humidity = float(request.GET.get('humidity', 60))
-    day      = datetime.datetime.now().weekday()
+    # Falls back to sensible defaults on a malformed/non-numeric value
+    # instead of crashing — matches the "still show a forecast" fallback
+    # philosophy already used elsewhere on this page (runForecastWithoutWeather).
+    try:
+        temp = float(request.GET.get('temp', 30))
+    except (TypeError, ValueError):
+        temp = 30.0
+    try:
+        humidity = float(request.GET.get('humidity', 60))
+    except (TypeError, ValueError):
+        humidity = 60.0
+    today    = datetime.date.today()
+    day      = today.weekday()
 
     products = predict_per_product(temp, day)
     total = sum(p['qty'] for p in products)
+
+    if products:
+        _log_predictions_once(products, today)
 
     _, accuracy, rows = train_and_predict(temp, day)
 
@@ -133,6 +183,58 @@ def get_prediction_api(request):
         'accuracy': accuracy,
         'row_count': rows,
         'products': products
+    })
+
+
+@owner_required
+def forecast_results_view(request):
+    """Forecast Results / Accuracy — Owner-only, matching the Owner-only
+    'Sales analytics' / 'Forecast results' bullets in the revision brief.
+    Compares each locked-in ForecastLog prediction to the actual sales
+    that came in for that date, once that date's sales data exists.
+    Never fabricates a number: a target date with zero uploaded sales
+    records (of ANY product) is treated as 'not yet comparable', not as
+    a real zero-actual result."""
+    from .models import ForecastLog
+    from sales.models import SalesRecord
+    from django.db.models import Sum
+
+    logs = ForecastLog.objects.all().order_by('-target_date')
+
+    dates_with_sales = set(
+        SalesRecord.objects.values_list('sale_date', flat=True).distinct()
+    )
+
+    comparisons  = []
+    pending_count = 0
+
+    for log in logs:
+        if log.target_date not in dates_with_sales:
+            pending_count += 1
+            continue
+
+        actual = SalesRecord.objects.filter(
+            product_name=log.product_name, sale_date=log.target_date
+        ).aggregate(total=Sum('quantity'))['total'] or 0
+
+        comparisons.append({
+            'product':      log.product_name,
+            'target_date':  log.target_date,
+            'predicted':    log.predicted_qty,
+            'actual':       actual,
+            'difference':   actual - log.predicted_qty,
+        })
+
+    total_predicted = sum(c['predicted'] for c in comparisons)
+    total_actual    = sum(c['actual'] for c in comparisons)
+
+    return render(request, 'PAGES/forecast_results.html', {
+        'comparisons':     comparisons,
+        'pending_count':   pending_count,
+        'total_predicted': total_predicted,
+        'total_actual':    total_actual,
+        'total_difference': total_actual - total_predicted,
+        'has_enough_data': len(comparisons) > 0,
     })
 
 

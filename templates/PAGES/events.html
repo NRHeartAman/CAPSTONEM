@@ -31,6 +31,15 @@
         line-height: 1.5;
     }
 
+    .event-location {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+    }
+
     .empty-events {
         text-align: center;
         padding: 56px 20px;
@@ -57,7 +66,7 @@
     }
 
     .request-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
     }
@@ -92,12 +101,12 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
     }
 
     .tab-btn.active {
-        background: var(--accent, #ff3d5a);
-        color: #fff;
+        background: var(--text);
+        color: var(--bg);
         border-color: transparent;
     }
 
@@ -210,9 +219,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 28%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
-                    <th style="width: 18%;" data-en="Target Date" data-tl="Petsa">Target Date</th>
-                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
+                    <th style="width: 22%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
+                    <th style="width: 22%;" data-en="Start – End" data-tl="Simula – Katapusan">Start – End</th>
+                    <th style="width: 12%; text-align:center;" data-en="Status" data-tl="Katayuan">Status</th>
+                    <th style="width: {% if not read_only %}30%{% else %}44%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
                     {% if not read_only %}
                     <th style="width: 14%; text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
                     {% endif %}
@@ -221,9 +231,19 @@
             <tbody>
                 {% for event in upcoming %}
                 <tr>
-                    <td><span class="event-name">{{ event.event_name }}</span></td>
                     <td>
-                        <span class="date-pill">📅 {{ event.event_date }}</span>
+                        <span class="event-name">{{ event.event_name }}</span>
+                        {% if event.location %}<div class="event-location"><i class='bx bx-map'></i> {{ event.location }}</div>{% endif %}
+                    </td>
+                    <td>
+                        <span class="date-pill">📅 {{ event.event_date|date:"M d" }}{% if event.start_time %} {{ event.start_time|time:"g:i A" }}{% endif %}{% if event.effective_end_date != event.event_date %} – {{ event.effective_end_date|date:"M d" }}{% endif %}{% if event.end_time %} {{ event.end_time|time:"g:i A" }}{% endif %}</span>
+                    </td>
+                    <td style="text-align:center;">
+                        {% if event.status_label == 'Ongoing' %}
+                            <span class="badge badge-green">🟢 <span data-en="Ongoing" data-tl="Kasalukuyan">Ongoing</span></span>
+                        {% else %}
+                            <span class="badge badge-blue">🔵 <span data-en="Upcoming" data-tl="Paparating">Upcoming</span></span>
+                        {% endif %}
                     </td>
                     <td><span class="event-desc" data-en="{{ event.description|default:'No description provided.' }}" data-tl="{% if event.description %}{{ event.description }}{% else %}Walang deskripsyon.{% endif %}">{{ event.description|default:"No description provided." }}</span></td>
                     {% if not read_only %}
@@ -236,7 +256,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
+                    <td colspan="{% if not read_only %}5{% else %}4{% endif %}">
                         <div class="empty-events">
                             <div class="icon">🗓️</div>
                             <p>
@@ -263,9 +283,10 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 28%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
-                    <th style="width: 18%;" data-en="Date" data-tl="Petsa">Date</th>
-                    <th style="width: {% if not read_only %}40%{% else %}54%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
+                    <th style="width: 22%;" data-en="Event / Promo" data-tl="Event / Promo">Event / Promo</th>
+                    <th style="width: 22%;" data-en="Start – End" data-tl="Simula – Katapusan">Start – End</th>
+                    <th style="width: 12%; text-align:center;" data-en="Status" data-tl="Katayuan">Status</th>
+                    <th style="width: {% if not read_only %}30%{% else %}44%{% endif %};" data-en="Description" data-tl="Deskripsyon">Description</th>
                     {% if not read_only %}
                     <th style="width: 14%; text-align:center;" data-en="Action" data-tl="Aksyon">Action</th>
                     {% endif %}
@@ -274,9 +295,15 @@
             <tbody>
                 {% for event in archived %}
                 <tr class="archived-row">
-                    <td><span class="event-name">{{ event.event_name }}</span></td>
                     <td>
-                        <span class="done-pill">✓ {{ event.event_date }}</span>
+                        <span class="event-name">{{ event.event_name }}</span>
+                        {% if event.location %}<div class="event-location"><i class='bx bx-map'></i> {{ event.location }}</div>{% endif %}
+                    </td>
+                    <td>
+                        <span class="done-pill">✓ {{ event.event_date|date:"M d" }}{% if event.effective_end_date != event.event_date %} – {{ event.effective_end_date|date:"M d" }}{% endif %}</span>
+                    </td>
+                    <td style="text-align:center;">
+                        <span class="badge badge-gray">⚪ <span data-en="Completed" data-tl="Tapos na">Completed</span></span>
                     </td>
                     <td><span class="event-desc" data-en="{{ event.description|default:'No description provided.' }}" data-tl="{% if event.description %}{{ event.description }}{% else %}Walang deskripsyon.{% endif %}">{{ event.description|default:"No description provided." }}</span></td>
                     {% if not read_only %}
@@ -289,7 +316,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{% if not read_only %}4{% else %}3{% endif %}">
+                    <td colspan="{% if not read_only %}5{% else %}4{% endif %}">
                         <div class="empty-events">
                             <div class="icon">📦</div>
                             <p><span data-en="No archived events yet." data-tl="Wala pang naka-archive na event.">No archived events yet.</span><br>
@@ -323,9 +350,12 @@
         <tbody>
             {% for req in my_event_requests %}
             <tr>
-                <td><strong>{{ req.event_name }}</strong></td>
                 <td>
-                    <span class="date-pill">📅 {{ req.event_date }}</span>
+                    <strong>{{ req.event_name }}</strong>
+                    {% if req.location %}<div class="event-location"><i class='bx bx-map'></i> {{ req.location }}</div>{% endif %}
+                </td>
+                <td>
+                    <span class="date-pill">📅 {{ req.event_date|date:"M d" }}{% if req.effective_end_date != req.event_date %} – {{ req.effective_end_date|date:"M d" }}{% endif %}</span>
                 </td>
                 <td><span class="event-desc">{{ req.description|default:"—" }}</span></td>
                 <td style="text-align:center;">
@@ -358,9 +388,29 @@
                 <label data-en="Event / Promo Name" data-tl="Pangalan ng Event / Promo">Event / Promo Name</label>
                 <input type="text" name="event_name" required data-en-placeholder="e.g. Buy 1 Take 1 Monday" data-tl-placeholder="hal. Buy 1 Take 1 Monday" placeholder="e.g. Buy 1 Take 1 Monday">
             </div>
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label data-en="Start Date" data-tl="Petsa ng Simula">Start Date</label>
+                    <input type="date" name="event_date" required>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label data-en="Start Time (Optional)" data-tl="Oras ng Simula (Opsyonal)">Start Time (Optional)</label>
+                    <input type="time" name="start_time">
+                </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label data-en="End Date (Optional)" data-tl="Petsa ng Katapusan (Opsyonal)">End Date (Optional)</label>
+                    <input type="date" name="end_date" data-en-placeholder="Same as start date if blank" placeholder="Same as start date if blank">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label data-en="End Time (Optional)" data-tl="Oras ng Katapusan (Opsyonal)">End Time (Optional)</label>
+                    <input type="time" name="end_time">
+                </div>
+            </div>
             <div class="form-group">
-                <label data-en="Event Date" data-tl="Petsa ng Event">Event Date</label>
-                <input type="date" name="event_date" required>
+                <label data-en="Location (Optional)" data-tl="Lokasyon (Opsyonal)">Location (Optional)</label>
+                <input type="text" name="location" data-en-placeholder="e.g. Barangay Plaza, Binangonan" data-tl-placeholder="hal. Barangay Plaza, Binangonan" placeholder="e.g. Barangay Plaza, Binangonan">
             </div>
             <div class="form-group">
                 <label data-en="Description (Optional)" data-tl="Deskripsyon (Opsyonal)">Description (Optional)</label>
@@ -394,9 +444,29 @@
                 <label data-en="Event / Promo Name" data-tl="Pangalan ng Event / Promo">Event / Promo Name</label>
                 <input type="text" name="event_name" required data-en-placeholder="e.g. Buy 1 Take 1 Monday" data-tl-placeholder="hal. Buy 1 Take 1 Monday" placeholder="e.g. Buy 1 Take 1 Monday">
             </div>
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label data-en="Start Date" data-tl="Petsa ng Simula">Start Date</label>
+                    <input type="date" name="event_date" required>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label data-en="Start Time (Optional)" data-tl="Oras ng Simula (Opsyonal)">Start Time (Optional)</label>
+                    <input type="time" name="start_time">
+                </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label data-en="End Date (Optional)" data-tl="Petsa ng Katapusan (Opsyonal)">End Date (Optional)</label>
+                    <input type="date" name="end_date" data-en-placeholder="Same as start date if blank" placeholder="Same as start date if blank">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label data-en="End Time (Optional)" data-tl="Oras ng Katapusan (Opsyonal)">End Time (Optional)</label>
+                    <input type="time" name="end_time">
+                </div>
+            </div>
             <div class="form-group">
-                <label data-en="Event Date" data-tl="Petsa ng Event">Event Date</label>
-                <input type="date" name="event_date" required>
+                <label data-en="Location (Optional)" data-tl="Lokasyon (Opsyonal)">Location (Optional)</label>
+                <input type="text" name="location" data-en-placeholder="e.g. Barangay Plaza, Binangonan" data-tl-placeholder="hal. Barangay Plaza, Binangonan" placeholder="e.g. Barangay Plaza, Binangonan">
             </div>
             <div class="form-group">
                 <label data-en="Description (Optional)" data-tl="Deskripsyon (Opsyonal)">Description (Optional)</label>

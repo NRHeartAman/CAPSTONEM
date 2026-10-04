@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.utils import timezone
+from django.db import models
 from .models import User
 from django.http import JsonResponse
 from .models import Notification
@@ -19,20 +20,38 @@ from datetime import timedelta
 EXPIRY_WARNING_DAYS = 7
 
 
+ALERT_COOLDOWN_HOURS = 24
+
+
 def _raise_alert(user, notif_type, key, title, message, link=''):
     """
-    Create an alert unless the same one is already sitting unread in the bell.
+    Create an alert unless the same condition already has one on file
+    recently.
 
-    `key` identifies the condition (e.g. "low_stock:14"). Once the owner marks
-    it read it can be raised again the next time the condition is detected, so
-    a re-order that dips below the threshold again still notifies.
+    `key` identifies the condition (e.g. "low_stock:14"). Bug this fixes:
+    generate_system_notifications() runs on every panel open/refresh —
+    including the refresh that immediately follows marking a notification
+    read — so only suppressing on `is_read=False` meant a still-ongoing
+    condition (e.g. an item that's still low) got a brand-new unread
+    notification created within the same second it was marked read.
+    "Mark as read" never actually stuck for anything ongoing.
+
+    Fix: also suppress while a same-key notification (read or not) is
+    still within ALERT_COOLDOWN_HOURS of its creation. Marking it read
+    now genuinely dismisses it for that window; if the condition is still
+    true after the cooldown, it resurfaces as a fresh reminder — which is
+    also what makes "a re-order that dips below the threshold again"
+    (the originally intended case) still notify once resolved-and-recurred.
 
     `link` is where clicking the notification should take the user — set
     here, at creation time, since this is where the code actually knows
     which item/request the alert is about.
     """
+    cutoff = timezone.now() - timedelta(hours=ALERT_COOLDOWN_HOURS)
     exists = Notification.objects.filter(
-        user=user, notif_type=notif_type, key=key, is_read=False
+        user=user, notif_type=notif_type, key=key,
+    ).filter(
+        models.Q(is_read=False) | models.Q(created_at__gte=cutoff)
     ).exists()
     if exists:
         return
@@ -232,20 +251,62 @@ def mark_notifications_read(request):
     return JsonResponse({'status': 'ok', 'updated': updated})
 
 
+CLIENT_IMAGE_DIR = 'images/client'           # under static/
+IMAGE_EXTS       = ('.jpg', '.jpeg', '.png', '.webp')
+
+
+def _login_branding():
+    """
+    Client branding for the login page's left panel. Drop files into
+    static/images/client/ — no code change needed:
+        logo.png (or .jpg/.webp)   → shown over the photos
+        store/*.jpg|png|webp       → slideshow, in filename order
+    Shop name comes from Settings → Store Name. Anything missing falls
+    back to the original CraveCast panel.
+    """
+    base = settings.BASE_DIR / 'static' / CLIENT_IMAGE_DIR
+
+    logo = next(
+        (f'{CLIENT_IMAGE_DIR}/logo{ext}' for ext in IMAGE_EXTS if (base / f'logo{ext}').is_file()),
+        None,
+    )
+    store_dir = base / 'store'
+    photos = sorted(
+        f'{CLIENT_IMAGE_DIR}/store/{p.name}'
+        for p in (store_dir.iterdir() if store_dir.is_dir() else [])
+        if p.suffix.lower() in IMAGE_EXTS
+    )
+
+    from owner.models import SystemSetting
+    config = SystemSetting.objects.first()
+
+    return {
+        'client_logo':  logo,
+        'store_photos': photos,
+        'shop_name':    config.store_name if config else '',
+    }
+
+
 def login_view(request):
     if request.method == 'POST':
-        u = request.POST.get('username')
+        u = request.POST.get('username', '').strip()
         p = request.POST.get('password')
-        selected_role = request.POST.get('role', '').strip().upper()
+
+        # Distinguish "no such account" from "wrong password" — checked
+        # before authenticate() so the two cases can show a different,
+        # specific notice instead of one generic message either way.
+        if not User.objects.filter(username=u).exists():
+            messages.error(request, "No account found with that username. Please check and try again.", extra_tags='login_fail')
+            return redirect('login')
+
         user = authenticate(request, username=u, password=p)
         if user is not None:
             if not user.is_active:
                 messages.error(request, "Your account is not yet activated. Please check your email for the activation link.", extra_tags='login_fail')
                 return redirect('login')
+            # Role is detected from the account itself — the login form no
+            # longer asks the user to pick one.
             db_role = getattr(user, 'role', '').strip().upper()
-            if selected_role != db_role:
-                messages.error(request, f"Access Denied: Your account is registered as {db_role}, but you attempted to use {selected_role} Access.", extra_tags='login_fail')
-                return redirect('login')
             login(request, user)
             if db_role == 'OWNER':
                 return redirect('owner-dashboard')
@@ -255,9 +316,9 @@ def login_view(request):
                 messages.error(request, "Your account has no role assigned. Contact an administrator.", extra_tags='login_fail')
                 return redirect('login')
         else:
-            messages.error(request, "Invalid username or password. Please try again.", extra_tags='login_fail')
+            messages.error(request, "Incorrect password. Please try again.", extra_tags='login_fail')
             return redirect('login')
-    return render(request, 'login.html')
+    return render(request, 'login.html', _login_branding())
 
 
 def auth_page(request):
@@ -272,7 +333,7 @@ def auth_page(request):
         User.objects.create_user(username=username, email=email, password=password, role=role)
         messages.success(request, "Account created successfully.")
         return redirect("login")
-    return render(request, "login.html")
+    return render(request, "login.html", _login_branding())
 
 
 def forgot_password(request):

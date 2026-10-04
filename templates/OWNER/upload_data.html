@@ -2,7 +2,7 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Upload Data - CraveCast{% endblock %}
+{% block title %}Upload Sales - CraveCast{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -31,17 +31,17 @@
         transition: border-color 0.2s, background 0.2s;
     }
     .upload-dropzone:hover {
-        border-color: var(--red);
-        background: var(--red-dim);
+        border-color: var(--blue);
+        background: var(--blue-dim);
     }
     .upload-dropzone i.bx-cloud-upload {
         font-size: 46px;
-        color: var(--red);
+        color: var(--blue);
         margin-bottom: 12px;
         display: block;
     }
     .upload-dropzone h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 16px;
         font-weight: 700;
         margin-bottom: 6px;
@@ -70,7 +70,7 @@
         border-bottom: 1px solid var(--border);
     }
     .schema-list li:last-child { border-bottom: none; }
-    .schema-list strong { color: var(--red); }
+    .schema-list strong { color: var(--text); }
 
     .filter-bar {
         display: flex;
@@ -86,7 +86,7 @@
         border-radius: 8px;
         padding: 9px 14px;
         font-size: 13px;
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
     }
 
     .table-card-header {
@@ -99,7 +99,7 @@
         gap: 12px;
     }
     .table-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
     }
@@ -110,31 +110,32 @@
 
 <div class="page-header">
     <div>
-        <h1 data-en="Data Management" data-tl="Pamamahala ng Datos">Data Management</h1>
+        <h1 data-en="Upload Sales" data-tl="I-upload ang Benta">Upload Sales</h1>
         <p data-en="Historical sales &amp; inventory data ingestion" data-tl="Pag-upload ng datos ng benta &amp; imbentaryo">Historical sales & inventory data ingestion</p>
     </div>
 </div>
 
 <div class="stats-grid">
+    {# Dated labels: the numbers come from the latest uploaded day, not necessarily today. #}
     <div class="stat-card blue">
-        <div class="stat-label" data-en="Units Sold Today" data-tl="Naibentang Units Ngayon">Units Sold Today</div>
+        <div class="stat-label">{% if data_is_current or not has_data %}<span data-en="Cups Sold Today" data-tl="Nabentang Tasa Ngayon">Cups Sold Today</span>{% else %}Cups Sold · {{ ref_date|date:"M j" }}{% endif %}</div>
         <div class="stat-value">{{ units_sold_today|default:0|intcomma }}</div>
-        <div class="stat-sub" data-en="As of latest data" data-tl="Batay sa pinakabagong datos">As of latest data</div>
+        <div class="stat-sub">{% if has_data %}Latest sales day: {{ ref_date|date:"M j, Y" }}{% else %}No sales uploaded yet{% endif %}</div>
     </div>
     <div class="stat-card teal">
-        <div class="stat-label" data-en="Orders Today" data-tl="Order Ngayon">Orders Today</div>
+        <div class="stat-label" data-en="Drinks Sold" data-tl="Mga Inuming Nabenta">Drinks Sold</div>
         <div class="stat-value">{{ total_orders_today|default:0|intcomma }}</div>
-        <div class="stat-sub" data-en="Transactions logged" data-tl="Naitalang transaksyon">Transactions logged</div>
+        <div class="stat-sub">Different products sold that day</div>
     </div>
     <div class="stat-card purple">
-        <div class="stat-label" data-en="Weekly Revenue" data-tl="Lingguhang Kita">Weekly Revenue</div>
+        <div class="stat-label" data-en="Last 7 Days Revenue" data-tl="Kita sa Huling 7 Araw">Last 7 Days Revenue</div>
         <div class="stat-value">₱{{ weekly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub" data-en="Last 7 days" data-tl="Huling 7 araw">Last 7 days</div>
+        <div class="stat-sub">{% if has_data %}{{ week_start|date:"M j" }} – {{ ref_date|date:"M j" }}{% else %}—{% endif %}</div>
     </div>
     <div class="stat-card amber">
-        <div class="stat-label" data-en="Monthly Revenue" data-tl="Buwanang Kita">Monthly Revenue</div>
+        <div class="stat-label" data-en="Last 30 Days Revenue" data-tl="Kita sa Huling 30 Araw">Last 30 Days Revenue</div>
         <div class="stat-value">₱{{ monthly_revenue|floatformat:2|default:"0.00"|intcomma }}</div>
-        <div class="stat-sub"><span data-en="Top seller" data-tl="Pinakabenta">Top seller</span>: {{ top_product }}</div>
+        <div class="stat-sub">{% if has_data %}{{ month_start|date:"M j" }} – {{ ref_date|date:"M j" }} · <span data-en="Top seller" data-tl="Pinakabenta">Top seller</span>: {{ top_product }}{% else %}—{% endif %}</div>
     </div>
 </div>
 
@@ -163,7 +164,7 @@
     </div>
 
     <div class="card">
-        <h3 style="font-family:'Syne',sans-serif; font-size:14px; font-weight:700;" data-en="CSV File Schema" data-tl="Schema ng CSV File">CSV File Schema</h3>
+        <h3 style="font-family:var(--font-main); font-size:14px; font-weight:700;" data-en="CSV File Schema" data-tl="Schema ng CSV File">CSV File Schema</h3>
         <ul class="schema-list">
             <li><strong>Date</strong> — <span data-en="Format: YYYY-MM-DD" data-tl="Format: YYYY-MM-DD">Format: YYYY-MM-DD</span></li>
             <li><strong>Product Name</strong> — <span data-en="Text string" data-tl="Text string">Text string</span></li>
@@ -181,7 +182,7 @@
         <h3 data-en="Historical Data Log" data-tl="Talaan ng Nakaraang Datos">Historical Data Log</h3>
         <form method="get" class="filter-bar" style="margin-bottom:0;">
             <select name="month" class="filter-select" onchange="this.form.submit()">
-                <option value="" data-en="All Months" data-tl="Lahat ng Buwan">All Months</option>
+                <option value="" data-en="Months" data-tl="Buwan"> Months</option>
                 <option value="1"  {% if selected_month == '1' %}selected{% endif %} data-en="January" data-tl="Enero">January</option>
                 <option value="2"  {% if selected_month == '2' %}selected{% endif %} data-en="February" data-tl="Pebrero">February</option>
                 <option value="3"  {% if selected_month == '3' %}selected{% endif %} data-en="March" data-tl="Marso">March</option>
@@ -196,7 +197,7 @@
                 <option value="12" {% if selected_month == '12' %}selected{% endif %} data-en="December" data-tl="Disyembre">December</option>
             </select>
             <select name="year" class="filter-select" onchange="this.form.submit()">
-                <option value="" data-en="All Years" data-tl="Lahat ng Taon">All Years</option>
+                <option value="" data-en="Year" data-tl=" Taon"Year</option>
                 {% for y in available_years %}
                 <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}

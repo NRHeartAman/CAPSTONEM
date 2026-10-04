@@ -17,8 +17,8 @@ The nav must contain:
     <div style="padding:14px 18px; border-bottom:1px solid var(--border);
                 display:flex; justify-content:space-between; align-items:center;
                 position:sticky; top:0; background:var(--surface);">
-        <span style="font-family:'Syne',sans-serif; font-weight:700; font-size:14px;">🔔 <span data-en="Notifications" data-tl="Mga Notification">Notifications</span></span>
-        <button onclick="markAllRead()" style="font-size:11px; color:var(--red);
+        <span style="font-family:var(--font-main); font-weight:700; font-size:14px;">🔔 <span data-en="Notifications" data-tl="Mga Notification">Notifications</span></span>
+        <button onclick="markAllRead()" style="font-size:11px; color:var(--blue);
                 background:none; border:none; cursor:pointer; font-weight:600;" data-en="Mark all read" data-tl="Markahang basa na lahat">Mark all read</button>
     </div>
     <div id="notif-list" style="padding:8px 0;">
@@ -75,7 +75,7 @@ function loadNotifications() {
             <div class="notif-row" id="notif-${n.id}" data-id="${n.id}" data-link="${n.link ? escHtml(n.link) : ''}" style="
                 padding:12px 18px; border-bottom:1px solid var(--border);
                 display:flex; gap:10px; align-items:flex-start;
-                background:${n.is_read ? 'transparent' : 'var(--red-dim)'};
+                background:${n.is_read ? 'transparent' : 'var(--blue-dim)'};
                 transition:background 0.2s;
                 ${n.link ? 'cursor:pointer;' : ''}">
                 <span style="font-size:18px; margin-top:1px;">${notifIcon(n.type)}</span>
@@ -89,7 +89,7 @@ function loadNotifications() {
                     <div style="font-size:11px; color:var(--text-muted);">${timeAgo(n.created_at)}</div>
                 </div>
                 ${!n.is_read ? `<button class="notif-mark-read-btn" data-id="${n.id}"
-                    style="font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;
+                    style="font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;
                            white-space:nowrap;font-weight:600;flex-shrink:0;">${notifL("Mark read", "Markahang basa")}</button>` : ''}
             </div>`).join('');
     })
@@ -142,6 +142,8 @@ function notifIcon(type) {
         'expiring':     '⚠️',
         'predicted_shortage': '🔮',
         'approval':     '✅',
+        'rejected':     '❌',
+        'restock':      '📥',
         'contract':     '📄',
         'upload':       '📤',
         'general':      'ℹ️',
@@ -169,9 +171,14 @@ function escHtml(str) {
 }
 
 /* ── Poll every 60s so new alerts (restock / out of stock / expiry)
-      surface without the panel having to be opened ─────── */
+      surface without the panel having to be opened. Uses the lightweight
+      count endpoint (no notification generation) — the bell was
+      redundantly re-running the full generate-and-list endpoint every
+      60 seconds on every open tab, for a value it only needed the count
+      of. Opening the panel still calls loadNotifications(), which does
+      generate/list the full set. ─────── */
 function pollNotifDot() {
-    fetch('/notifications/api/', {
+    fetch('/notifications/count/', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(r => r.ok ? r.json() : null)

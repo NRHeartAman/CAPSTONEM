@@ -17,10 +17,12 @@ urlpatterns = [
     path('reset-password/success/',             views.password_reset_success,   name='password_reset_success'),
     path('reset-password/<str:token>/',         views.reset_password_confirm,   name='reset_password_confirm'),
     # Notifications (bell menu in base.html)
-    path('notifications/',            views.notifications_json,        name='notifications_json'),
+    # NOTE: /notifications/api/ generates + lists notifications (used when the
+    # panel is opened); /notifications/count/ is the lightweight unread-count
+    # check (used by the 60s poll) — keep these separate, don't point the poll
+    # at the generation endpoint again.
     path('notifications/api/',        views.notifications_json,        name='notifications_api'),
     path('notifications/count/',      views.notifications_unread_count, name='notifications_count'),
-    path('notifications/read/',       views.mark_notifications_read,   name='notifications_read'),
     path('notifications/read-all/',   views.mark_notifications_read,   name='notifications_read_all'),
     path('notifications/<int:pk>/read/', views.mark_notification_read, name='notification_read'),
 ]

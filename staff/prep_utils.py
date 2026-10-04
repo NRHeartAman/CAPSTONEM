@@ -1,122 +1,64 @@
 # staff/prep_utils.py
 
+import datetime
+
 from django.utils import timezone
-from django.db.models import Sum, F
+from django.db.models import F
 from inventory.models import Inventory
-from sales.models import SalesRecord
 from staff.models import PrepTask        # <-- now correctly from staff
-
-
-SEEDED_TASKS = [
-    {
-        'title':        'Tapioca Pearls Batch (Heavy Load)',
-        'instructions': 'Cook minimum 3 full large batches for afternoon peak hours',
-        'priority':     'high',
-        'source':       'manual',
-    },
-    {
-        'title':        'Classic Tea Base Emulsion',
-        'instructions': 'Brew 25 Liters of Assam Black Tea base before opening',
-        'priority':     'high',
-        'source':       'manual',
-    },
-    {
-        'title':        'Non-Dairy Creamer Stocks',
-        'instructions': 'Thaw and decant 10 units into active workspace bins',
-        'priority':     'normal',
-        'source':       'manual',
-    },
-]
-
-STOCK_TASK_MAP = [
-    {
-        'keyword':      'wintermelon',
-        'title':        'Wintermelon Syrup Refill',
-        'instructions': 'Replenish main line dispensers to maximum capacity',
-        'priority':     'normal',
-        'source':       'low_stock',
-    },
-    {
-        'keyword':      'taro',
-        'title':        'Taro Powder Restock',
-        'instructions': 'Top up taro powder canister from storage room',
-        'priority':     'normal',
-        'source':       'low_stock',
-    },
-    {
-        'keyword':      'coffee',
-        'title':        'Coffee Beans Critical Restock',
-        'instructions': 'Retrieve emergency stock from back storage — CRITICAL',
-        'priority':     'high',
-        'source':       'low_stock',
-    },
-    {
-        'keyword':      'milk',
-        'title':        'Milk Supply Check',
-        'instructions': 'Check milk stock and request reorder if below 1L',
-        'priority':     'normal',
-        'source':       'low_stock',
-    },
-    {
-        'keyword':      'sugar',
-        'title':        'Sugar Refill',
-        'instructions': 'Refill sugar dispensers from bulk storage',
-        'priority':     'normal',
-        'source':       'low_stock',
-    },
-]
+from forecast.ml_engine import predict_per_product, get_historical_avg_temp
 
 
 def generate_daily_prep_tasks():
     today = timezone.localdate()
 
-    # 1. Seeded tasks
-    for task in SEEDED_TASKS:
+    # 1. Auto-tasks from low stock inventory — built entirely from each
+    # item's own fields (name, stock_qty, unit, restock_threshold). No
+    # hardcoded per-item list: any Inventory row can trigger a task.
+    low_stock_items = Inventory.objects.filter(stock_qty__lte=F('restock_threshold'))
+    for item in low_stock_items:
+        is_critical = item.stock_qty <= (item.restock_threshold / 2)
+
         PrepTask.objects.get_or_create(
-            title=task['title'],
+            title=f"Restock {item.item_name}",
             date=today,
             defaults={
-                'instructions': task['instructions'],
-                'priority':     task['priority'],
-                'source':       task['source'],
+                'instructions': (
+                    f"Current stock: {item.stock_qty:g} {item.unit} — "
+                    f"at or below the restock threshold ({item.restock_threshold:g} {item.unit}). "
+                    f"{'CRITICAL — ' if is_critical else ''}Restock before shift."
+                ),
+                'priority':     'high' if is_critical else 'normal',
+                'source':       'low_stock',
+                'linked_item':  item.item_name,
             }
         )
 
-    # 2. Auto-tasks from low stock inventory
-    low_stock_items = Inventory.objects.filter(stock_qty__lte=F('restock_threshold'))
-    for item in low_stock_items:
-        item_name_lower = item.item_name.lower()
-        for mapping in STOCK_TASK_MAP:
-            if mapping['keyword'] in item_name_lower:
-                PrepTask.objects.get_or_create(
-                    title=mapping['title'],
-                    date=today,
-                    defaults={
-                        'instructions': mapping['instructions'],
-                        'priority':     'high' if item.stock_qty <= 5 else mapping['priority'],
-                        'source':       mapping['source'],
-                        'linked_item':  item.item_name,
-                    }
-                )
-                break
+    # 2. Tomorrow's outlook — per-product demand forecast for the next
+    # shift, driven by the same ML engine as the Forecast page. Falls back
+    # to each weekday's historical average temperature since there's no
+    # live weather call available outside a request context.
+    tomorrow = today + datetime.timedelta(days=1)
+    tomorrow_dow = tomorrow.weekday()
+    outlook_temp = get_historical_avg_temp(tomorrow_dow)
+    if outlook_temp is None:
+        outlook_temp = 28.0
 
-    # 3. Best-seller prep reminders (top 2 this month)
-    ref_month_start = today.replace(day=1)
-    top_sellers = (
-        SalesRecord.objects.filter(sale_date__gte=ref_month_start, sale_date__lte=today)
-        .values('product_name')
-        .annotate(total_qty=Sum('quantity'))
-        .order_by('-total_qty')[:2]
-    )
-    for product in top_sellers:
-        title = f"Prep: {product['product_name']} (Top Seller)"
+    forecast_products = predict_per_product(outlook_temp, tomorrow_dow, tomorrow.month)
+    top_outlook = [p for p in forecast_products if p['qty'] > 0][:3]
+
+    for product in top_outlook:
+        title = f"Prep: {product['name']} (Tomorrow's Outlook)"
         PrepTask.objects.get_or_create(
             title=title,
             date=today,
             defaults={
-                'instructions': f"Ensure sufficient batch prepared — {product['product_name']} is a top seller this month.",
-                'priority':     'high',
-                'source':       'best_seller',
-                'linked_item':  product['product_name'],
+                'instructions': (
+                    f"Forecast expects ~{product['qty']} units of {product['name']} "
+                    f"on {tomorrow.strftime('%a, %b %d')} — prep sufficient batch this shift."
+                ),
+                'priority':     'high' if product['trend'] == 'up' else 'normal',
+                'source':       'forecast',
+                'linked_item':  product['name'],
             }
         )

@@ -7,7 +7,6 @@
     <title>CraveCast — Sign In</title>
 
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
     :root[data-theme="dark"] {
@@ -43,16 +42,19 @@
     }
 
     :root {
+        --font-main:   'Aptos', 'Aptos Display', 'Segoe UI', Arial, sans-serif;
         --red:         #ff3d5a;
         --red-dim:     rgba(255,61,90,0.1);
         --red-glow:    rgba(255,61,90,0.3);
         --purple-glow: rgba(139, 92, 246, 0.25);
+        --blue:        #3b82f6;
+        --blue-glow:   rgba(59,130,246,0.3);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
@@ -136,7 +138,7 @@
     }
 
     .brand-name {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 36px;
         font-weight: 800;
         color: #f0f0f8;
@@ -155,6 +157,82 @@
         padding-top: 12px;
         width: 100%;
         text-align: center;
+    }
+
+    /* ── CLIENT BRANDING (static/images/client/): store photo slideshow, ── */
+    /* ── with logo + shop name in a strip along the bottom.               ── */
+    .left-panel.client-brand {
+        background: #1e0736;
+        justify-content: flex-end;
+        align-items: stretch;
+        padding: 0;
+    }
+    .left-panel.client-brand::before,
+    .left-panel.client-brand::after { display: none; }
+
+    .store-slides { position: absolute; inset: 0; z-index: 0; }
+    .store-slide {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transform: scale(1.06);
+        transition: opacity 1.2s ease, transform 7s ease-out;
+    }
+    .store-slide.active { opacity: 1; transform: scale(1); }
+
+    /* Fades the bottom of the photo into the brand purple so the info strip reads cleanly. */
+    .store-slides::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg,
+            rgba(30,7,54,0) 0%, rgba(30,7,54,0) 50%,
+            rgba(30,7,54,0.75) 75%, rgba(30,7,54,0.97) 100%);
+    }
+
+    .brand-strip {
+        position: relative; z-index: 10;
+        display: flex; align-items: center; gap: 18px;
+        padding: 28px 36px 30px;
+        animation: cardFadeIn 0.6s ease;
+    }
+    .client-logo-img {
+        width: 84px; height: 84px;
+        flex-shrink: 0;
+        object-fit: contain;
+        border-radius: 50%;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 0 4px rgba(255,255,255,0.12);
+    }
+    .brand-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+    .shop-name {
+        font-size: 28px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    }
+    .powered-by {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.65);
+    }
+    .powered-by strong { color: #fff; font-weight: 800; }
+    .powered-by strong span { color: var(--red); }
+
+    .slide-dots { display: flex; gap: 8px; flex-shrink: 0; }
+    .slide-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        border: none; padding: 0; cursor: pointer;
+        background: rgba(255,255,255,0.35);
+        transition: width 0.3s, background 0.3s;
+    }
+    .slide-dot.active { width: 22px; border-radius: 4px; background: #fff; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .store-slide, .store-slide.active { transition: opacity 0.4s ease; transform: none; }
     }
 
     /* ── RIGHT PANEL: Clean Access Terminal ── */
@@ -202,7 +280,7 @@
         justify-content: center;
         cursor: pointer;
         color: var(--text-muted);
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.3px;
@@ -213,7 +291,7 @@
     .login-card { width: 100%; max-width: 380px; }
 
     .login-heading {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 26px;
         font-weight: 800;
         margin-bottom: 6px;
@@ -221,35 +299,6 @@
     }
 
     .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
-
-    .role-selector {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 24px;
-    }
-    .role-option { display: none; }
-    .role-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-muted);
-    }
-    .role-label i { font-size: 16px; }
-    .role-option:checked + .role-label {
-        border-color: var(--red);
-        background: var(--red-dim);
-        color: var(--red);
-    }
 
     .form-group { margin-bottom: 18px; }
     .form-group label {
@@ -277,7 +326,7 @@
         border: 1px solid var(--border);
         border-radius: 10px;
         color: var(--text);
-        font-family: 'DM Sans', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         transition: all 0.2s;
     }
@@ -319,11 +368,11 @@
     .btn-login {
         width: 100%;
         padding: 14px;
-        background: var(--red);
+        background: var(--blue);
         color: #fff;
         border: none;
         border-radius: 10px;
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
         cursor: pointer;
@@ -334,7 +383,7 @@
         gap: 8px;
         margin-top: 28px;
     }
-    .btn-login:hover { background: #e0304a; transform: translateY(-1px); box-shadow: 0 4px 20px var(--red-glow); }
+    .btn-login:hover { background: #2f6fe0; transform: translateY(-1px); box-shadow: 0 4px 20px var(--blue-glow); }
 
     .msg-error {
         padding: 12px 16px;
@@ -382,6 +431,34 @@
 </head>
 <body>
 
+{# Client branding: files in static/images/client/ (see accounts.views._login_branding). #}
+{# With no client logo it falls back to the original CraveCast panel.                  #}
+{% if client_logo %}
+<div class="left-panel client-brand">
+    {% if store_photos %}
+    <div class="store-slides" aria-hidden="true">
+        {% for photo in store_photos %}
+        <img src="{% static photo %}" alt="" class="store-slide{% if forloop.first %} active{% endif %}"{% if not forloop.first %} loading="lazy"{% endif %}>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="brand-strip">
+        <img src="{% static client_logo %}" alt="{{ shop_name|default:'Store' }} logo" class="client-logo-img">
+        <div class="brand-text">
+            {% if shop_name %}<div class="shop-name">{{ shop_name }}</div>{% endif %}
+            <div class="powered-by">Powered by <strong>Crave<span>Cast</span></strong> · Demand Forecasting</div>
+        </div>
+        {% if store_photos|length > 1 %}
+        <div class="slide-dots" role="tablist" aria-label="Store photos">
+            {% for photo in store_photos %}
+            <button type="button" class="slide-dot{% if forloop.first %} active{% endif %}" aria-label="Photo {{ forloop.counter }}"></button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
 <div class="left-panel">
     <div class="glass-brand-card">
         <img src="{% static 'images/logo.png' %}" alt="CraveCast Corporate Logo" class="brand-logo-img">
@@ -389,6 +466,7 @@
         <div class="brand-badge">Demand Forecasting System</div>
     </div>
 </div>
+{% endif %}
 
 <div class="right-panel">
 
@@ -405,20 +483,12 @@
         <div class="login-heading" data-en="Welcome" data-tl="Maligayang Pagdating">Welcome</div>
         <div class="login-sub" data-en="Sign in to your account" data-tl="Mag-sign in sa iyong account">Sign in to your account</div>
 
+        {% for message in messages %}
+        <div class="msg-error"><i class='bx bx-error-circle'></i> {{ message }}</div>
+        {% endfor %}
+
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
-
-            <div class="role-selector">
-                <input type="radio" name="role" id="role-staff" value="Staff" class="role-option" checked>
-                <label for="role-staff" class="role-label">
-                    <i class='bx bx-user'></i> <span data-en="Staff" data-tl="Staff">Staff</span>
-                </label>
-
-                <input type="radio" name="role" id="role-owner" value="Owner" class="role-option">
-                <label for="role-owner" class="role-label">
-                    <i class='bx bx-crown'></i> <span data-en="Owner Portal" data-tl="Portal ng Owner">Owner Portal</span>
-                </label>
-            </div>
 
             <div class="form-group">
                 <label data-en="Username" data-tl="Username">Username</label>
@@ -492,6 +562,24 @@
         localStorage.setItem('cc-lang', next);
         applyLang(next);
     });
+
+    /* ── Store photo slideshow ── */
+    (function () {
+        const slides = document.querySelectorAll('.store-slide');
+        const dots   = document.querySelectorAll('.slide-dot');
+        if (slides.length < 2) return;
+        let current = 0, timer;
+        function show(i) {
+            slides[current].classList.remove('active');
+            if (dots[current]) dots[current].classList.remove('active');
+            current = (i + slides.length) % slides.length;
+            slides[current].classList.add('active');
+            if (dots[current]) dots[current].classList.add('active');
+        }
+        function start() { clearInterval(timer); timer = setInterval(() => show(current + 1), 5000); }
+        dots.forEach((dot, i) => dot.addEventListener('click', () => { show(i); start(); }));
+        start();
+    })();
 
     const pwInput  = document.getElementById('login-password');
     const pwToggle = document.getElementById('toggle-password');

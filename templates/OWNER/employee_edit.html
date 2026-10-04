@@ -44,6 +44,36 @@
                 <option value="regular"  {% if profile.contract_type == 'regular' %}selected{% endif %}>Regular</option>
             </select>
         </div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--text-dim); text-transform:uppercase; margin:20px 0 10px;" data-en="Wage &amp; Payment" data-tl="Sahod &amp; Bayad">Wage &amp; Payment</div>
+        <div style="display:flex; gap:12px;">
+            <div class="form-group" style="flex:1;">
+                <label>Wage Amount <span style="color:var(--text-muted); font-weight:400;">(₱ per period)</span></label>
+                <input type="number" name="wage_amount" value="{{ profile.wage_amount|default:'' }}" min="0" step="0.01" placeholder="e.g. 3500.00">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Wage Schedule</label>
+                <select name="wage_schedule">
+                    <option value="weekly"   {% if profile.wage_schedule == 'weekly'   %}selected{% endif %}>Weekly</option>
+                    <option value="biweekly" {% if profile.wage_schedule == 'biweekly' %}selected{% endif %}>Biweekly</option>
+                    <option value="monthly"  {% if profile.wage_schedule == 'monthly'  %}selected{% endif %}>Monthly</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Last Payment Date <span style="color:var(--text-muted); font-weight:400;">(used to project the next pay date)</span></label>
+            <input type="date" name="last_payment_date" value="{{ profile.last_payment_date|date:'Y-m-d'|default:'' }}">
+        </div>
+        {% if profile.next_payment_date %}
+        <p style="font-size:12px; color:var(--text-muted); margin:-8px 0 16px;">
+            Next expected payment: <strong style="color:var(--text);">{{ profile.next_payment_date|date:"M d, Y" }}</strong>
+            {% if profile.payment_status == 'due' %}
+                <span class="badge badge-orange" style="margin-left:6px;">🟠 Due</span>
+            {% else %}
+                <span class="badge badge-blue" style="margin-left:6px;">🔵 Upcoming</span>
+            {% endif %}
+        </p>
+        {% endif %}
+
         <div class="form-group">
             <label>Profile Photo</label>
             {% if profile.photo %}

@@ -40,7 +40,7 @@
     }
 
     .section-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 15px;
         font-weight: 700;
         display: flex;
@@ -50,7 +50,7 @@
         color: var(--text);
     }
 
-    .section-card-header h3 i { color: var(--purple); font-size: 18px; }
+    .section-card-header h3 i { color: var(--text-muted); font-size: 18px; }
 
     .quick-nav {
         display: grid;
@@ -73,7 +73,7 @@
         transition: all 0.2s ease;
     }
     .quick-nav-card:hover {
-        border-color: var(--purple);
+        border-color: var(--border-hover);
         transform: translateY(-2px);
         background: var(--surface2);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -103,7 +103,8 @@
     }
     .chart-bar-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--purple) 0%, var(--red) 100%);
+        background: var(--text);
+        opacity: 0.7;
         border-radius: 6px;
         transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
         width: 0%;
@@ -121,7 +122,7 @@
         justify-content: space-between;
         transition: border-color 0.2s;
     }
-    .prep-item:hover { border-color: rgba(139, 92, 246, 0.3); }
+    .prep-item:hover { border-color: var(--border-hover); }
 
     .prep-meta { display: flex; align-items: center; gap: 12px; }
 
@@ -135,7 +136,7 @@
         background: var(--surface);
         flex-shrink: 0;
     }
-    .prep-checkbox:hover { border-color: var(--purple); }
+    .prep-checkbox:hover { border-color: var(--blue); }
 
     .prep-details h4 { font-size: 13px; font-weight: 700; margin: 0 0 2px 0; color: var(--text); }
     .prep-details p  { font-size: 11px; color: var(--text-muted); margin: 0; }
@@ -177,7 +178,7 @@
 <div class="stats-grid">
     <div class="stat-card teal">
         <div class="stat-label" data-en="Total Items Tracked" data-tl="Kabuuang Naka-track na Item">Total Items Tracked</div>
-        <div class="stat-value">{{ total_items|default:0|intcomma }}</div>
+        <div class="stat-value" id="statTotalItems">{{ total_items|default:0|intcomma }}</div>
         <div class="stat-sub" data-en="Inventory records" data-tl="Rekord ng imbentaryo">Inventory records</div>
     </div>
     <div class="stat-card red"
@@ -185,17 +186,17 @@
          title="Low stock:&#10;{% for item in low_stock_items %}{{ item.item_name }} — {{ item.stock_qty|floatformat:0 }} {{ item.unit }}&#10;{% endfor %}{% if low_stock_count > 5 %}+{{ low_stock_count|add:"-5" }} more&#10;{% endif %}"
          {% endif %}>
         <div class="stat-label"><span data-en="Low Stock Alerts" data-tl="Mababang Stock na Alerto">Low Stock Alerts</span> <i class='bx bx-info-circle' style="font-size:11px;opacity:0.6;" title="Hover for item names"></i></div>
-        <div class="stat-value">{{ low_stock_count|default:0|intcomma }}</div>
+        <div class="stat-value" id="statLowStock">{{ low_stock_count|default:0|intcomma }}</div>
         <div class="stat-sub" data-en="Items below critical point" data-tl="Mga item na mababa sa kritikal na antas">Items below critical point</div>
     </div>
     <div class="stat-card blue">
         <div class="stat-label" data-en="Ingredients (Stock)" data-tl="Sangkap (Stock)">Ingredients (Stock)</div>
-        <div class="stat-value">{{ ingredient_count|default:0 }}</div>
+        <div class="stat-value" id="statIngredientCount">{{ ingredient_count|default:0 }}</div>
         <div class="stat-sub" data-en="Active raw materials" data-tl="Aktibong hilaw na materyales">Active raw materials</div>
     </div>
     <div class="stat-card purple">
         <div class="stat-label" data-en="Supplies Storage" data-tl="Imbakan ng Suplay">Supplies Storage</div>
-        <div class="stat-value">{{ supply_count|default:0 }}</div>
+        <div class="stat-value" id="statSupplyCount">{{ supply_count|default:0 }}</div>
         <div class="stat-sub" data-en="Packaging items" data-tl="Mga item na pambalot">Packaging items</div>
     </div>
 </div>
@@ -254,8 +255,8 @@
                         <td><strong style="color: var(--text);">{{ item.item_name }}</strong></td>
                         <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
                         <td style="text-align: center;">
-                            {% if item.stock_qty <= 5 %}
-                                <span class="badge badge-red" style="font-size: 11px;" data-en="Critical Fill" data-tl="Kritikal">Critical Fill</span>
+                            {% if item.stock_qty <= 0 %}
+                                <span class="badge badge-red" style="font-size: 11px;" data-en="Out of Stock" data-tl="Naubos">Out of Stock</span>
                             {% else %}
                                 <span class="badge badge-amber" style="font-size: 11px;" data-en="Low Stock" data-tl="Mababang Stock">Low Stock</span>
                             {% endif %}
@@ -302,10 +303,12 @@
                         </td>
                         <td style="color: var(--text-muted); font-weight: 600;">{{ item.stock_qty }} {{ item.unit }}</td>
                         <td style="text-align: center;">
-                            {% if item.stock_qty <= item.restock_threshold %}
-                                <span class="badge badge-red" style="font-size: 11px;" data-en="Restock Now" data-tl="Mag-restock Na">Restock Now</span>
+                            {% if item.stock_qty <= 0 %}
+                                <span class="badge badge-red" style="font-size: 11px;" data-en="Out of Stock" data-tl="Naubos">Out of Stock</span>
+                            {% elif item.stock_qty <= item.restock_threshold %}
+                                <span class="badge badge-amber" style="font-size: 11px;" data-en="Low Stock" data-tl="Mababang Stock">Low Stock</span>
                             {% else %}
-                                <span class="badge badge-green" style="font-size: 11px;" data-en="Stable" data-tl="Stable">Stable</span>
+                                <span class="badge badge-green" style="font-size: 11px;" data-en="Good" data-tl="Maayos">Good</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -328,7 +331,7 @@
         <div class="section-card">
             <div class="section-card-header">
                 <h3><i class='bx bx-bar-chart-alt-2'></i> <span data-en="Best-Selling Variants" data-tl="Pinakabenta na Variant">Best-Selling Variants</span></h3>
-                <span class="badge badge-purple" style="font-size: 11px;" data-en="Top Items" data-tl="Nangungunang Item">Top Items</span>
+                <span class="badge badge-blue" style="font-size: 11px;" data-en="Top Items" data-tl="Nangungunang Item">Top Items</span>
             </div>
             <div class="bar-chart-container">
                 {% for item in best_sellers %}
@@ -366,9 +369,9 @@
                     <div class="prep-meta">
                         <div class="prep-checkbox"
                              onclick="togglePrepTask(this, {{ task.pk }})"
-                             style="border-color:{% if task.is_done %}var(--purple){% else %}var(--border){% endif %};">
+                             style="border-color:{% if task.is_done %}var(--green){% else %}var(--border){% endif %};">
                             {% if task.is_done %}
-                                <i class='bx bx-check' style='color:var(--purple);font-size:14px;font-weight:bold;'></i>
+                                <i class='bx bx-check' style='color:var(--green);font-size:14px;font-weight:bold;'></i>
                             {% endif %}
                         </div>
                         <div class="prep-details">
@@ -382,8 +385,11 @@
                                     <i class='bx bx-error-circle' style="font-size:10px;color:var(--red);"></i>
                                     <span data-en="Auto: Low stock" data-tl="Auto: Mababang stock">Auto: Low stock</span> — {{ task.linked_item }}
                                 {% elif task.source == 'best_seller' %}
-                                    <i class='bx bx-bar-chart-alt-2' style="font-size:10px;color:var(--purple);"></i>
+                                    <i class='bx bx-bar-chart-alt-2' style="font-size:10px;color:var(--blue);"></i>
                                     <span data-en="Auto: Top seller" data-tl="Auto: Pinakabenta">Auto: Top seller</span>
+                                {% elif task.source == 'forecast' %}
+                                    <i class='bx bx-cloud' style="font-size:10px;color:var(--blue);"></i>
+                                    <span data-en="Auto: Tomorrow's outlook" data-tl="Auto: Kinabukasang outlook">Auto: Tomorrow's outlook</span> — {{ task.linked_item }}
                                 {% endif %}
                             </span>
                             {% endif %}
@@ -424,9 +430,9 @@
             const row   = document.getElementById('prep-item-' + pk);
             const title = row.querySelector('.prep-details h4');
             el.innerHTML = data.is_done
-                ? "<i class='bx bx-check' style='color:var(--purple);font-size:14px;font-weight:bold;'></i>"
+                ? "<i class='bx bx-check' style='color:var(--green);font-size:14px;font-weight:bold;'></i>"
                 : "";
-            el.style.borderColor       = data.is_done ? 'var(--purple)' : 'var(--border)';
+            el.style.borderColor       = data.is_done ? 'var(--green)' : 'var(--border)';
             row.style.opacity          = data.is_done ? '0.5' : '1';
             title.style.textDecoration = data.is_done ? 'line-through' : 'none';
             title.style.color          = data.is_done ? 'var(--text-muted)' : 'var(--text)';
@@ -442,5 +448,45 @@
         const doneLabel = (localStorage.getItem('cc-lang') || 'en') === 'tl' ? 'Tapos na' : 'Done';
         if (counter) counter.textContent = done + '/' + items.length + ' ' + doneLabel;
     }
+
+    /* ── 20-SECOND DASHBOARD REFRESH ──────────────────────────
+       Same numbers _get_staff_dashboard_stats() already renders the
+       page with — no full reload, only the stat-card text updates. */
+    (function () {
+        let pollTimer = null;
+        let inFlight  = false;
+
+        function fmtInt(n) {
+            return Math.round(n).toLocaleString('en-PH');
+        }
+
+        function refreshDashboardStats() {
+            if (inFlight) return;
+            inFlight = true;
+            fetch("{% url 'staff-dashboard-stats-api' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (!data) return;
+                    const map = {
+                        statTotalItems:      data.total_items,
+                        statLowStock:        data.low_stock_count,
+                        statIngredientCount: data.ingredient_count,
+                        statSupplyCount:     data.supply_count,
+                    };
+                    Object.entries(map).forEach(([id, val]) => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = fmtInt(val);
+                    });
+                })
+                .catch(() => { /* silent — next poll will retry */ })
+                .finally(() => { inFlight = false; });
+        }
+
+        pollTimer = setInterval(refreshDashboardStats, 20000);
+
+        window.addEventListener('beforeunload', () => {
+            if (pollTimer) clearInterval(pollTimer);
+        });
+    })();
 </script>
 {% endblock %}

@@ -22,6 +22,7 @@ class InventoryToastTests(TestCase):
         r = c.post('/inventory/', {
             'form_type': 'add_entry', 'item_name': 'Milk', 'total_stock': '20',
             'unit': 'pcs', 'category': 'Stock', 'restock_threshold': '5',
+            'unit_cost': '10', 'package_size': '1', 'package_unit': 'piece',
         }, follow=True)
         html = r.content.decode()
         self.assertNotIn('✓ ✓', html)

@@ -1,5 +1,45 @@
 from django.db import models
+from django.utils import timezone
 import uuid
+
+
+class EventScheduleMixin(models.Model):
+    """
+    Shared start/end date-time + location fields for events, plus a
+    computed (never stored, never stale) Upcoming/Ongoing/Completed status.
+
+    `event_date` stays the field name for the start date on the concrete
+    models below, for backward compatibility with existing queries/
+    templates — this mixin just adds what's new around it.
+    """
+    location   = models.CharField(max_length=255, blank=True, default='')
+    start_time = models.TimeField(null=True, blank=True)
+    end_date   = models.DateField(null=True, blank=True)
+    end_time   = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def effective_end_date(self):
+        return self.end_date or self.event_date
+
+    @property
+    def status_label(self):
+        """'Upcoming' | 'Ongoing' | 'Completed', computed from now."""
+        now = timezone.localtime()
+        today = now.date()
+        end_date = self.effective_end_date
+        if today > end_date:
+            return 'Completed'
+        if today < self.event_date:
+            return 'Upcoming'
+        # Today falls within [start_date, end_date] — check times when given.
+        if today == self.event_date and self.start_time and now.time() < self.start_time:
+            return 'Upcoming'
+        if today == end_date and self.end_time and now.time() > self.end_time:
+            return 'Completed'
+        return 'Ongoing'
 
 
 # =========================
@@ -49,13 +89,14 @@ class InventoryRequest(models.Model):
     unit        = models.CharField(max_length=50)
     category    = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='Stock')
     status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    rejection_reason = models.TextField(blank=True, default='')
     created_at  = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"[{self.status.upper()}] {self.item_name} by {self.requested_by.username}"
 
 
-class EventRequest(models.Model):
+class EventRequest(EventScheduleMixin):
     STATUS_CHOICES = [
         ('pending',  'Pending'),
         ('approved', 'Approved'),
@@ -68,7 +109,10 @@ class EventRequest(models.Model):
     event_name  = models.CharField(max_length=255)
     event_date  = models.DateField()
     description = models.TextField(blank=True)
+    # Approval workflow state — separate from status_label (the mixin's
+    # computed Upcoming/Ongoing/Completed lifecycle status).
     status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    rejection_reason = models.TextField(blank=True, default='')
     created_at  = models.DateTimeField(auto_now_add=True)
 
 
@@ -117,7 +161,7 @@ class SalesUploadRequest(models.Model):
 # OWNER EVENT MANAGER
 # =========================
 
-class OwnerEvent(models.Model):
+class OwnerEvent(EventScheduleMixin):
     event_name  = models.CharField(max_length=255)
     event_date  = models.DateField()
     description = models.TextField(blank=True, null=True)

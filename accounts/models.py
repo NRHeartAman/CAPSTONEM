@@ -36,6 +36,11 @@ class EmployeeProfile(models.Model):
         ('2years',  '2 Years'),
         ('regular', 'Regular'),
     ]
+    WAGE_SCHEDULE_CHOICES = [
+        ('weekly',   'Weekly'),
+        ('biweekly', 'Biweekly'),
+        ('monthly',  'Monthly'),
+    ]
     user          = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     photo         = models.ImageField(upload_to='employee_photos/', blank=True, null=True)
     phone         = models.CharField(max_length=20, blank=True)
@@ -43,6 +48,11 @@ class EmployeeProfile(models.Model):
     date_hired    = models.DateField(null=True, blank=True)
     contract_type = models.CharField(max_length=20, choices=CONTRACT_CHOICES, default='6months')
     contract_end  = models.DateField(null=True, blank=True)
+
+    # ── Wage / payment timing (Owner/admin visibility only) ──
+    wage_amount       = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    wage_schedule     = models.CharField(max_length=20, choices=WAGE_SCHEDULE_CHOICES, default='biweekly')
+    last_payment_date = models.DateField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.date_hired and self.contract_type != 'regular':
@@ -70,6 +80,22 @@ class EmployeeProfile(models.Model):
             return 'expiring_soon'
         return 'active'
 
+    @property
+    def next_payment_date(self):
+        """Next expected pay date, projected from last_payment_date + schedule."""
+        if not self.last_payment_date:
+            return None
+        interval = {'weekly': 7, 'biweekly': 14, 'monthly': 30}.get(self.wage_schedule, 14)
+        return self.last_payment_date + relativedelta(days=interval)
+
+    @property
+    def payment_status(self):
+        """'unset' | 'due' | 'upcoming' — computed, never stored."""
+        next_pay = self.next_payment_date
+        if next_pay is None:
+            return 'unset'
+        return 'due' if next_pay <= date.today() else 'upcoming'
+
     def __str__(self):
         return f"Profile of {self.user.username}"
 
@@ -93,6 +119,8 @@ class Notification(models.Model):
         ('expiring',     'Expiring Soon'),
         ('predicted_shortage', 'Predicted Shortage'),
         ('approval',     'Approval'),
+        ('rejected',     'Request Rejected'),
+        ('restock',      'Restock'),
         ('contract',     'Contract Expiring'),
         ('upload',       'CSV Upload'),
         ('general',      'General'),

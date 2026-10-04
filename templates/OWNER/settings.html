@@ -28,7 +28,7 @@
     }
 
     .settings-card-header h3 {
-        font-family: 'Syne', sans-serif;
+        font-family: var(--font-main);
         font-size: 14px;
         font-weight: 700;
     }
@@ -118,6 +118,9 @@
                 <label data-en="Store Longitude" data-tl="Longitude ng Tindahan">Store Longitude</label>
                 <input type="number" step="0.0001" name="store_lon" value="{{ config.store_lon }}">
             </div>
+            <p style="font-size:11px; color:var(--text-muted); margin:-8px 0 16px; line-height:1.5;" data-en="This is the actual location the Forecast page's weather (and weather-driven demand prediction) uses by default — not the device viewing the dashboard." data-tl="Ito ang aktwal na lokasyon na ginagamit bilang default ng weather sa Forecast page — hindi ang lokasyon ng device na tumitingin sa dashboard.">
+                This is the actual location the Forecast page's weather (and weather-driven demand prediction) uses by default — not the device viewing the dashboard.
+            </p>
             <button type="submit" name="update_config" class="btn btn-primary" style="width: 100%; margin-top: 8px; justify-content: center;">
                 <i class='bx bx-save'></i> <span data-en="Update Profile &amp; Engine" data-tl="I-update ang Profile &amp; Engine">Update Profile & Engine</span>
             </button>
@@ -132,21 +135,15 @@
         </div>
         <div class="settings-card-body">
             <div class="form-group">
-                <label data-en="Stock Threshold (Low Stock Limit)" data-tl="Threshold ng Stock (Limitasyon ng Mababang Stock)">Stock Threshold (Low Stock Limit)</label>
-                <input type="number" name="stock_threshold" value="{{ config.stock_threshold }}">
+                <label data-en="Default Low-Stock Limit (new items)" data-tl="Default na Limitasyon ng Mababang Stock (bagong item)">Default Low-Stock Limit (new items)</label>
+                <input type="number" name="stock_threshold" value="{{ config.stock_threshold }}" min="0">
+                <small style="color:var(--text-muted); font-size:11px;">Used when you add an item without its own limit. Each item's limit can be changed in Inventory → Edit.</small>
             </div>
             <div class="form-group">
                 <label data-en="Weather API Key (OpenWeatherMap)" data-tl="Weather API Key (OpenWeatherMap)">Weather API Key (OpenWeatherMap)</label>
-                <input type="password" name="weather_api_key" value="{{ config.weather_api_key|default:'' }}"
-                    data-en-placeholder="Enter API key..." data-tl-placeholder="Ilagay ang API key..." placeholder="Enter API key...">
-            </div>
-            <div class="form-group">
-                <label data-en="Forecast Mode" data-tl="Mode ng Forecast">Forecast Mode</label>
-                <select name="forecast_mode">
-                    <option value="Standard"     {% if config.forecast_mode == 'Standard'     %}selected{% endif %} data-en="Standard" data-tl="Standard">Standard</option>
-                    <option value="Aggressive"   {% if config.forecast_mode == 'Aggressive'   %}selected{% endif %} data-en="Aggressive" data-tl="Agresibo">Aggressive</option>
-                    <option value="Conservative" {% if config.forecast_mode == 'Conservative' %}selected{% endif %} data-en="Conservative" data-tl="Konserbatibo">Conservative</option>
-                </select>
+                {# Never echo the saved key into the page — blank keeps the saved one. #}
+                <input type="password" name="weather_api_key" autocomplete="off"
+                    {% if config.weather_api_key %}placeholder="•••••••• saved — leave blank to keep"{% else %}placeholder="Enter API key..."{% endif %}>
             </div>
         </div>
     </div>

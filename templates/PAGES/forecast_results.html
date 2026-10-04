@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}CraveCast - Forecast Accuracy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .pending-banner {
+        background: var(--blue-dim);
+        border: 1px solid rgba(59,130,246,0.3);
+        border-left: 3px solid var(--blue);
+        border-radius: 12px;
+        padding: 13px 18px;
+        margin-bottom: 20px;
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .diff-pos { color: var(--green); font-weight: 700; }
+    .diff-neg { color: var(--red); font-weight: 700; }
+    .diff-zero { color: var(--text-muted); font-weight: 600; }
+
+    .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); }
+    .empty-state .emoji { font-size:40px; margin-bottom:12px; }
+    .empty-state p { font-size:13px; margin-top:6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1 data-en="Forecast Accuracy" data-tl="Katumpakan ng Forecast">Forecast Accuracy</h1>
+        <p data-en="Predicted demand vs. actual sales — how well the forecast performed once real numbers came in" data-tl="Inaasahang demand kumpara sa aktwal na benta">Predicted demand vs. actual sales — how well the forecast performed once real numbers came in</p>
+    </div>
+</div>
+
+{% if pending_count %}
+<div class="pending-banner">
+    ⏳ <span data-en="{{ pending_count }} prediction{{ pending_count|pluralize }} logged for dates without uploaded sales data yet — they'll appear here once that day's sales are uploaded." data-tl="May {{ pending_count }} prediksyon na naka-log para sa petsang wala pang na-upload na sales data.">{{ pending_count }} prediction{{ pending_count|pluralize }} logged for dates without uploaded sales data yet — they'll appear here once that day's sales are uploaded.</span>
+</div>
+{% endif %}
+
+{% if has_enough_data %}
+<div class="summary-grid">
+    <div class="stat-card blue">
+        <div class="stat-label" data-en="Total Predicted" data-tl="Kabuuang Inaasahan">Total Predicted</div>
+        <div class="stat-value">{{ total_predicted|floatformat:0|intcomma }}</div>
+        <div class="stat-sub" data-en="Units, across all logged forecasts" data-tl="Units, sa lahat ng naka-log na forecast">Units, across all logged forecasts</div>
+    </div>
+    <div class="stat-card teal">
+        <div class="stat-label" data-en="Total Actual" data-tl="Kabuuang Aktwal">Total Actual</div>
+        <div class="stat-value">{{ total_actual|floatformat:0|intcomma }}</div>
+        <div class="stat-sub" data-en="Units actually sold on those dates" data-tl="Units na naibenta sa mga petsang iyon">Units actually sold on those dates</div>
+    </div>
+    <div class="stat-card {% if total_difference >= 0 %}green{% else %}amber{% endif %}">
+        <div class="stat-label" data-en="Overall Difference" data-tl="Kabuuang Pagkakaiba">Overall Difference</div>
+        <div class="stat-value">{% if total_difference > 0 %}+{% endif %}{{ total_difference|floatformat:0|intcomma }}</div>
+        <div class="stat-sub" data-en="Actual minus predicted" data-tl="Aktwal minus inaasahan">Actual minus predicted</div>
+    </div>
+</div>
+
+<div style="overflow-x:auto;">
+<table>
+    <thead>
+        <tr>
+            <th data-en="Product" data-tl="Produkto">Product</th>
+            <th data-en="Date" data-tl="Petsa">Date</th>
+            <th data-en="Predicted" data-tl="Inaasahan">Predicted</th>
+            <th data-en="Actual" data-tl="Aktwal">Actual</th>
+            <th data-en="Difference" data-tl="Pagkakaiba">Difference</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in comparisons %}
+        <tr>
+            <td style="font-weight:600; font-size:14px;">{{ c.product }}</td>
+            <td style="color:var(--text-muted); font-size:13px;">{{ c.target_date|date:"M d, Y" }}</td>
+            <td style="color:var(--text-muted);">{{ c.predicted|floatformat:0|intcomma }}</td>
+            <td style="color:var(--text-muted);">{{ c.actual|floatformat:0|intcomma }}</td>
+            <td>
+                {% if c.difference > 0 %}
+                    <span class="diff-pos">+{{ c.difference|floatformat:0|intcomma }}</span>
+                {% elif c.difference < 0 %}
+                    <span class="diff-neg">{{ c.difference|floatformat:0|intcomma }}</span>
+                {% else %}
+                    <span class="diff-zero">0</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="emoji">📊</div>
+    <p data-en="Not enough historical forecast data yet." data-tl="Wala pang sapat na historikal na forecast data.">Not enough historical forecast data yet.</p>
+    <p data-en="Forecast Results compares each day's prediction to that day's actual sales — visit the Forecast page daily and keep uploading sales data, and results will appear here automatically." data-tl="Inihahambing dito ang prediksyon sa aktwal na benta bawat araw — bisitahin ang Forecast page araw-araw at magpatuloy sa pag-upload ng sales data.">Forecast Results compares each day's prediction to that day's actual sales — visit the Forecast page daily and keep uploading sales data, and results will appear here automatically.</p>
+</div>
+{% endif %}
+
+{% endblock %}
